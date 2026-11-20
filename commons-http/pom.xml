@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.xdyan</groupId>
+    <artifactId>quarkus-lambda-commons-parent</artifactId>
+    <version>${revision}</version>
+  </parent>
+  <artifactId>quarkus-lambda-commons-http</artifactId>
+  <name>quarkus-lambda-commons-http</name>
+  <description>For HTTP API lambdas: error responses, request correlation and logging, and the date formats of the API</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.xdyan</groupId>
+      <artifactId>quarkus-lambda-commons-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-resteasy-jackson</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-validator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-amazon-lambda-http</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

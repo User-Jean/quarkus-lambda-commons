@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.xdyan</groupId>
+    <artifactId>quarkus-lambda-commons-parent</artifactId>
+    <version>${revision}</version>
+  </parent>
+  <artifactId>quarkus-lambda-commons-core</artifactId>
+  <name>quarkus-lambda-commons-core</name>
+  <description>For any lambda (HTTP, SQS, scheduled): X-Ray subsegments with @XRayTraced and the Clock bean</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-amazon-lambda-xray</artifactId>
+    </dependency>
+  </dependencies>
+</project>
