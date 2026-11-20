@@ -72,6 +72,18 @@ public class ErrorLogTest {
   }
 
   @Test
+  @DisplayName("log a request without body as empty, also when it is sent with no bytes")
+  public void requestWithoutBody() {
+    try (var capture = LogCapture.start()) {
+      given().contentType(JSON).body("").when().post("/test/body");
+      given().when().get("/test/not-found").then().statusCode(404);
+
+      assertEquals(2, capture.messages().stream().filter(m -> m.equals("INFO Request Body is empty")).count(),
+          capture.messages().toString());
+    }
+  }
+
+  @Test
   @DisplayName("log a response without body and clear the MDC, so the next request doesn't inherit it")
   public void responseWithoutBody() {
     try (var capture = LogCapture.start()) {

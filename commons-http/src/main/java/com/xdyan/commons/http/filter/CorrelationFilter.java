@@ -65,6 +65,7 @@ public class CorrelationFilter implements ContainerRequestFilter, ContainerRespo
     MDC.put("trace_id", resolveTraceRoot());
     MDC.put("client_name", ofNullable(requestContext.getHeaderString(CLIENT_NAME_KEY)).orElse(EMPTY));
     MDC.put("client_version", ofNullable(requestContext.getHeaderString(CLIENT_VERSION_KEY)).orElse(EMPTY));
+    // In Lambda a request without body (e.g. a GET) still has an entity, with no bytes
     if (!requestContext.hasEntity()) {
       log.info("Request Body is empty");
     } else {
@@ -72,7 +73,9 @@ public class CorrelationFilter implements ContainerRequestFilter, ContainerRespo
         String requestBody = new String(requestContext.getEntityStream().readAllBytes(), UTF_8);
         requestContext.setEntityStream(new ByteArrayInputStream(requestBody.getBytes(UTF_8)));
 
-        if  (requestBody.length() > maxBodyLength()) {
+        if (requestBody.isEmpty()) {
+          log.info("Request Body is empty");
+        } else if (requestBody.length() > maxBodyLength()) {
           log.info("Request Body (Truncated): {}", requestBody.substring(0, maxBodyLength()));
         } else {
           log.info("Request Body: {}", requestBody);
