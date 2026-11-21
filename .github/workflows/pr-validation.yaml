@@ -1,6 +1,6 @@
 name: Pull Request Validation
 
-# Tests of both modules on every PR. Publishing is not configured yet.
+# Tests of both modules on every PR. Publishing is the workflow "Release".
 on:
   pull_request:
     branches: [ main ]

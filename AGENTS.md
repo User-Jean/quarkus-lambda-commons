@@ -30,3 +30,7 @@ com.xdyan.commons
 - Every public class has a test that starts Quarkus (`@QuarkusTest` in the module, which acts as the app). The test
   config is `application.properties`: the modules don't have `quarkus-config-yaml`
 - `./mvnw clean install` runs the tests of both modules and installs the jars in the local Maven repository
+- Published to Maven Central by the workflow `release.yaml` (profile `release` of the parent pom: sources, javadoc,
+  GPG signature, `central-publishing-maven-plugin`). A published version is permanent: a fix is a new version
+- The metadata Maven Central requires (url, licenses, developers, scm) is in the parent pom and inherited as is; a new
+  module needs its own `name` and `description`

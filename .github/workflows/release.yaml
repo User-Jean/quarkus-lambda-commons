@@ -1,0 +1,115 @@
+name: Release
+
+# Publishes a new version of both modules to Maven Central, from main and only on demand:
+# next version → tests → local tag → signed upload to the Central Portal (waits until published) → push tag → GitHub
+# release with the changelog. A version published to Maven Central can never be changed nor deleted: if something is
+# wrong, publish a new one.
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Part of the version to increase'
+        type: choice
+        options: [ patch, minor, major ]
+        default: patch
+      description:
+        description: 'Summary of the release (first lines of the GitHub release)'
+        type: string
+        required: false
+
+permissions:
+  contents: write
+
+# Two releases at the same time would compute the same version
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish to Maven Central
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check the branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Run it from main (was ${{ github.ref_name }})"
+          exit 1
+
+      - name: Check repository configuration
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          missing=()
+          for name in CENTRAL_USERNAME CENTRAL_PASSWORD GPG_PRIVATE_KEY GPG_PASSPHRASE; do
+            [[ -n ${!name} ]] || missing+=("$name")
+          done
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "::error::Missing repository secrets: ${missing[*]} (README.md, Publicar)"
+            exit 1
+          fi
+
+      # Full history and tags: the version extension and the changelog need them
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Next version
+        id: version
+        run: |
+          VERSION=$(.github/scripts/next-version.sh "${{ inputs.bump }}")
+          if git rev-parse -q --verify "refs/tags/v$VERSION" > /dev/null; then
+            echo "::error::Tag v$VERSION already exists"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
+
+      # Writes settings.xml with the server "central" (the user token of the Central Portal, read from the env vars)
+      # and imports the GPG key
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      # Local only until it is published: the extension reads the version from it
+      - name: Tag locally
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.version.outputs.version }}" -m "v${{ steps.version.outputs.version }}"
+
+      - name: Test, sign and publish
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          ACTUAL=$(./mvnw -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          if [[ $ACTUAL != "${{ steps.version.outputs.version }}" ]]; then
+            echo "::error::Maven version is $ACTUAL, expected ${{ steps.version.outputs.version }}"
+            exit 1
+          fi
+          ./mvnw -B -Prelease clean deploy
+
+      - name: Push tag
+        run: git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.version }}
+          DESCRIPTION: ${{ inputs.description }}
+        run: |
+          .github/scripts/release-notes.sh "$TAG" "$DESCRIPTION" > notes.md
+          gh release create "$TAG" --title "$TAG" --notes-file notes.md --verify-tag

@@ -69,5 +69,43 @@ xdyan:
 
 ## Versiones
 
-La versión no está en `pom.xml`: sale de los tags `vX.Y.Z` (`.mvn/`), igual que en las lambdas. La publicación de los
-jars todavía no está configurada; mientras tanto, `./mvnw install` los deja en el repositorio local de Maven.
+La versión no está en `pom.xml`: sale de los tags `vX.Y.Z` (`.mvn/`), igual que en las lambdas. Sin tag,
+`./mvnw install` deja en el repositorio local de Maven una versión `X.Y.Z-<n>-g<sha>-SNAPSHOT` para probarla en una app.
+
+## Publicar
+
+Se publica en Maven Central con el workflow **Release** (Actions → Release → Run workflow, desde `main`):
+
+1. `bump`: `patch` (arreglos), `minor` (algo nuevo compatible) o `major` (cambio que rompe a las apps)
+2. `description`: resumen opcional, va al inicio del release de GitHub
+
+El workflow calcula la versión, corre los tests, firma los jars, los sube al Central Portal y espera a que estén
+publicados; recién ahí sube el tag y crea el release de GitHub con la lista de PRs. Si falla antes de publicar, no queda
+ni tag ni versión: se corrige y se vuelve a correr.
+
+**Una versión publicada en Maven Central no se puede cambiar ni borrar.** Si sale con un error, se publica otra.
+
+### Configuración (una sola vez)
+
+- **Namespace** `com.xdyan` verificado en https://central.sonatype.com (registro TXT en el DNS de `xdyan.com`)
+- **User token** del Central Portal (avatar → View Account → Generate User Token)
+- **Llave GPG** para firmar, con la parte pública en un keyserver:
+  ```bash
+  gpg --quick-gen-key "xdyan" ed25519 sign 0
+  gpg --keyserver keyserver.ubuntu.com --send-keys <ID de la llave>
+  gpg --armor --export-secret-keys <ID de la llave>   # para el secret GPG_PRIVATE_KEY
+  ```
+- **Secrets** del repositorio (Settings → Secrets and variables → Actions):
+
+  | Secret | Valor |
+  |---|---|
+  | `CENTRAL_USERNAME` | Username del user token |
+  | `CENTRAL_PASSWORD` | Password del user token |
+  | `GPG_PRIVATE_KEY` | La llave privada en ASCII (`-----BEGIN PGP PRIVATE KEY BLOCK-----` …) |
+  | `GPG_PASSPHRASE` | La frase de la llave |
+
+Para revisar localmente lo que se publicaría (jars de sources y javadoc incluidos), sin firmar ni subir:
+
+```bash
+./mvnw -Prelease -Dgpg.skip -DskipTests clean verify
+```
