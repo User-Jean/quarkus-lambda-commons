@@ -134,6 +134,19 @@ xdyan:
 
 `name` y `component` de los errores son `quarkus.application.name`, que Quarkus llena con el `artifactId` de la app.
 
+### Campos nulos en las respuestas
+
+`commons-http` no escribe los campos nulos: la respuesta no trae `"campo": null`, el campo simplemente no está (una
+lista vacía sí se escribe, `[]`). Por eso, en el `openapi.yaml` un campo que puede faltar es opcional: no va en
+`required` con `nullable: true`. Una app que necesite los `null` (p. ej. un frontend que ya compara con `null`) lo
+vuelve a activar:
+
+```yaml
+quarkus:
+  jackson:
+    serialization-inclusion: always
+```
+
 ## Para reemplazar algo
 
 - **`Clock`**: si la app produce su propio `Clock`, gana el de la app (`@DefaultBean`)
