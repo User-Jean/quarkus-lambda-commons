@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <!--
-  Build of quarkus-lambda-commons: the modules and what only the library needs (Jandex index, test dependencies). The
-  versions and the metadata come from quarkus-lambda-parent, the same parent the apps use.
+  Build of quarkus-lambda-commons: the modules and what only the library needs (Jandex index, Lombok, test
+  dependencies). The versions and the metadata come from quarkus-lambda-dependencies, the same versions the apps get
+  through quarkus-lambda-parent. Not quarkus-lambda-parent itself: its dependencies would reach every app through the
+  modules.
 -->
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
          xmlns="http://maven.apache.org/POM/4.0.0"
@@ -9,9 +11,9 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.xdyan</groupId>
-    <artifactId>quarkus-lambda-parent</artifactId>
+    <artifactId>quarkus-lambda-dependencies</artifactId>
     <version>${revision}</version>
-    <relativePath>quarkus-lambda-parent/pom.xml</relativePath>
+    <relativePath>quarkus-lambda-dependencies/pom.xml</relativePath>
   </parent>
   <artifactId>quarkus-lambda-commons-parent</artifactId>
   <packaging>pom</packaging>
@@ -19,6 +21,7 @@
   <description>Shared Quarkus code for AWS Lambda</description>
 
   <modules>
+    <module>quarkus-lambda-dependencies</module>
     <module>quarkus-lambda-parent</module>
     <module>commons-core</module>
     <module>commons-http</module>
@@ -38,6 +41,21 @@
 
   <build>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
       <!-- META-INF/jandex.idx in each jar: without it Quarkus doesn't discover the beans, providers and
            interceptors of the library in the apps -->
       <plugin>

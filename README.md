@@ -5,7 +5,8 @@ de los módulos se activan solos, sin declarar nada: los jars traen su índice J
 
 | Artefacto | Para | Trae |
 |---|---|---|
-| `quarkus-lambda-parent` | El `<parent>` de cada lambda | Las versiones de Quarkus, de los módulos de abajo, de Lombok, MapStruct y los plugins, y la configuración del build: el plugin de Quarkus, el perfil `native` y el generador del OpenAPI |
+| `quarkus-lambda-parent` | El `<parent>` de cada lambda | Las versiones (de `quarkus-lambda-dependencies`); las dependencias que usa toda lambda: `quarkus-config-yaml`, `quarkus-logging-json`, Lombok, MapStruct y `quarkus-junit`; y el build: el plugin de Quarkus, el perfil `native` y el generador del OpenAPI |
+| `quarkus-lambda-dependencies` | El parent de la librería y de `quarkus-lambda-parent`. Una app no lo usa | Solo las versiones: Quarkus, los módulos de abajo, Lombok, MapStruct y los plugins |
 | `quarkus-lambda-commons-core` | Cualquier lambda (HTTP, SQS, programada) | `@XRayTraced` (subsegmentos de X-Ray por capa) y el bean `Clock` |
 | `quarkus-lambda-commons-http` | Lambdas de API HTTP. Incluye `core` | Respuestas de error `{name, message, code, errors[]}` para 400, 404 y 409, `CorrelationFilter` (MDC y logs de los bodies) y `DateTimeMapper` (`dd/MM/yyyy`) |
 
@@ -32,6 +33,7 @@ Quarkus con la que se probaron, así que una app nunca mezcla versiones incompat
     <groupId>io.quarkus</groupId>
     <artifactId>quarkus-hibernate-orm</artifactId>
   </dependency>
+  <!-- quarkus-config-yaml, quarkus-logging-json, Lombok, MapStruct y quarkus-junit ya vienen del parent -->
 </dependencies>
 
 <build>
@@ -54,6 +56,8 @@ Quarkus con la que se probaron, así que una app nunca mezcla versiones incompat
 - El parent también configura el compilador (Java 25, Lombok y MapStruct), los tests (surefire con el LogManager de
   Quarkus), el filtrado de `src/main/resources` (`${...}` de Maven) y `./mvnw package -Pnative`
 - Una dependencia que el parent no maneja se declara con su versión, como en cualquier pom
+- Una app no puede quitar una dependencia que hereda: por eso el parent solo trae las que usa toda lambda. Lo que es
+  solo de HTTP (`rest-assured`, `quarkus-resteasy-jackson`) o de una base de datos lo declara cada app
 - La app hereda del parent la licencia, la url y el scm de esta librería; no afecta a una lambda, que no se publica
 
 Lo que la app sigue escribiendo:

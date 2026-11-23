@@ -1,11 +1,12 @@
 # AGENTS.md — quarkus-lambda-commons
 
-Library shared by the Quarkus lambdas, and the parent pom of the lambdas. Three artifacts, one version (tags `vX.Y.Z`,
+Library shared by the Quarkus lambdas, and the parent pom of the lambdas. Four artifacts, one version (tags `vX.Y.Z`,
 as in the lambdas):
 
 ```
-pom.xml                       quarkus-lambda-commons-parent: build of the library (modules, Jandex, test deps)
-├── quarkus-lambda-parent/    quarkus-lambda-parent: parent of the apps AND of pom.xml. Versions, metadata, build
+pom.xml                         quarkus-lambda-commons-parent: build of the library (modules, Jandex, Lombok, tests)
+├── quarkus-lambda-dependencies/  versions, metadata and publishing: parent of pom.xml and of quarkus-lambda-parent
+├── quarkus-lambda-parent/        parent of the apps: + the dependencies every lambda uses and the build
 ├── commons-core/             quarkus-lambda-commons-core
 └── commons-http/             quarkus-lambda-commons-http
 ```
@@ -43,17 +44,19 @@ com.xdyan.commons
 - Every public class has a test that starts Quarkus (`@QuarkusTest` in the module, which acts as the app). The test
   config is `application.properties`: the modules don't have `quarkus-config-yaml`
 - `./mvnw clean install` runs the tests of both modules and installs the jars in the local Maven repository
-- `quarkus-lambda-parent` is the only place with versions: Quarkus (`quarkus.platform.version`, the BOM and the
+- `quarkus-lambda-dependencies` is the only place with versions: Quarkus (`quarkus.platform.version`, the BOM and the
   plugin), the library modules (`quarkus-lambda-commons.version`, written by the versioning extension, never by hand:
   `${project.version}` would be the version of the app), Lombok, MapStruct and the plugins
-- `quarkus-lambda-parent` must not run anything in every module that only an app needs: the quarkus and openapi plugins
-  are in `pluginManagement` (the app declares them); dependencies are only managed. What the library alone needs
-  goes in the root `pom.xml`
+- The library inherits from `quarkus-lambda-dependencies`, never from `quarkus-lambda-parent`: the `<dependencies>` of
+  the app parent would reach every app through the modules. What the library alone needs goes in the root `pom.xml`
+- `<dependencies>` of `quarkus-lambda-parent` only has what every lambda uses (YAML config, JSON logs, Lombok,
+  MapStruct, quarkus-junit): an app can't remove an inherited dependency. HTTP, database or SQS dependencies are
+  declared by each app
 - A change in `quarkus-lambda-parent` reaches every app on its next upgrade: a breaking one (a removed property, a
   changed plugin configuration, a new Quarkus minor) is said in the release
-- Published to Maven Central by the workflow `release.yaml` (profile `publish-central` of `quarkus-lambda-parent`:
+- Published to Maven Central by the workflow `release.yaml` (profile `publish-central` of `quarkus-lambda-dependencies`:
   sources, javadoc, GPG signature, `central-publishing-maven-plugin`). A published version is permanent: a fix is a
   new version
-- The metadata Maven Central requires (url, licenses, developers, scm) is in `quarkus-lambda-parent` and inherited as
+- The metadata Maven Central requires (url, licenses, developers, scm) is in `quarkus-lambda-dependencies` and inherited as
   is; a new module needs its own `name` and `description`
 - No pom writes a version: `.github/scripts/check-version-unchanged.sh` (PR validation) fails otherwise
