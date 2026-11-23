@@ -25,6 +25,9 @@ com.xdyan.commons
 ## Rules
 
 - `core` must work in any lambda: no JAX-RS, RESTEasy or API Gateway classes. What depends on HTTP goes in `http`
+- Each module is the starter of its kind of lambda: `http` brings the HTTP stack (`quarkus-amazon-lambda-http`,
+  `quarkus-resteasy-jackson`, `quarkus-hibernate-validator`) and the apps don't declare it. Changing or removing one of
+  those dependencies breaks the apps: say it in the release
 - Every module has the `jandex-maven-plugin` (root pom): without `META-INF/jandex.idx` the apps don't discover its
   beans, providers or interceptors
 - A bean an app may want to replace is `@DefaultBean`
