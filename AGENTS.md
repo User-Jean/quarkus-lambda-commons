@@ -44,6 +44,9 @@ com.xdyan.commons
   returns the message of the exception
 - `META-INF/microprofile-config.properties` of each module sets `com.xdyan.commons` to INFO: the apps log only ERROR
   outside their package
+- `commons-http` sets `quarkus.jackson.serialization-inclusion=non_null` there: a null field is not written in the
+  response (an empty list is). A field that can be missing is optional in the `openapi.yaml`, not `required` +
+  `nullable`. An app overrides it in its `application.yaml` (`always`). `NullFieldsTest` checks it
 - MDC fields are snake_case (`request_id`, `trace_id`, `client_name`…) and listed in `CorrelationFilter.FIELDS`: an
   `MdcContributor` of the app can't replace them. Renaming one breaks the log queries of the apps: say it in the release
 - Error messages never show internal details: a 5xx never returns the message of the exception, and the 404 of RESTEasy

@@ -24,6 +24,9 @@ public class TestResource {
   public record Body(@NotNull @Pattern(regexp = "^[a-z]+$") String name, @NotNull Integer unitPrice) {
   }
 
+  public record Fields(String name, String note, List<String> tags) {
+  }
+
   @Inject
   DateTimeMapper dateTimeMapper;
 
@@ -78,5 +81,11 @@ public class TestResource {
   @Path("/body")
   public Body body(@Valid Body body) {
     return body;
+  }
+
+  @GET
+  @Path("/fields")
+  public Fields fields() {
+    return new Fields("x", null, List.of());
   }
 }
