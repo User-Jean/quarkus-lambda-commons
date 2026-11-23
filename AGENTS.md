@@ -8,7 +8,7 @@ com.xdyan.commons
 ├── clock/   (core) ClockProducer (@DefaultBean), ClockConfig
 └── http/    (http) HttpConfig
     ├── error/    ErrorMessage, ErrorLog, ConflictException, InvalidFieldsException, HttpErrorClassifier, provider/*
-    ├── filter/   CorrelationFilter
+    ├── filter/   CorrelationFilter, MdcContributor
     └── mapper/   DateTimeMapper
 ```
 
@@ -26,6 +26,10 @@ com.xdyan.commons
   returns the message of the exception
 - `META-INF/microprofile-config.properties` of each module sets `com.xdyan.commons` to INFO: the apps log only ERROR
   outside their package
+- MDC fields are snake_case (`request_id`, `trace_id`, `client_name`…) and listed in `CorrelationFilter.FIELDS`: an
+  `MdcContributor` of the app can't replace them. Renaming one breaks the log queries of the apps: say it in the release
+- Error messages never show internal details: a 5xx never returns the message of the exception, and the 404 of RESTEasy
+  itself (`RESTEASY...`, no endpoint or a path parameter that can't be converted) returns "Resource not found"
 - Nothing of a client or a domain: this repository is meant to be public
 - Every public class has a test that starts Quarkus (`@QuarkusTest` in the module, which acts as the app). The test
   config is `application.properties`: the modules don't have `quarkus-config-yaml`

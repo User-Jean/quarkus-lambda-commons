@@ -7,17 +7,29 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
- * Keeps the log records of com.xdyan.commons while a test runs, with the MDC of each one.
+ * Keeps the log records of a category (com.xdyan.commons by default) while a test runs, with the MDC of each one.
  */
 public class LogCapture extends Handler implements AutoCloseable {
 
-  private static final Logger LOGGER = Logger.getLogger("com.xdyan.commons");
+  private final Logger logger;
 
   public final List<org.jboss.logmanager.ExtLogRecord> records = new CopyOnWriteArrayList<>();
 
+  private LogCapture(String category) {
+    this.logger = Logger.getLogger(category);
+  }
+
   public static LogCapture start() {
-    var capture = new LogCapture();
-    LOGGER.addHandler(capture);
+    return start("com.xdyan.commons");
+  }
+
+  /**
+   * The records of a category, also below the level of the app (ERROR in application.properties) when the category
+   * logs them.
+   */
+  public static LogCapture start(String category) {
+    var capture = new LogCapture(category);
+    capture.logger.addHandler(capture);
     return capture;
   }
 
@@ -39,6 +51,6 @@ public class LogCapture extends Handler implements AutoCloseable {
 
   @Override
   public void close() {
-    LOGGER.removeHandler(this);
+    logger.removeHandler(this);
   }
 }

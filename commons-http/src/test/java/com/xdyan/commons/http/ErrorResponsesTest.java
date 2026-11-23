@@ -30,6 +30,23 @@ public class ErrorResponsesTest {
   }
 
   @Test
+  @DisplayName("return 404 without the internal message of RESTEasy when a path parameter can't be converted")
+  public void notFoundPathParameter() {
+    given().when().get("/test/number/abc").then()
+        .statusCode(404)
+        .body("message", equalTo("Resource not found"))
+        .body("errors[0].message", equalTo("Resource not found"));
+  }
+
+  @Test
+  @DisplayName("return 404 without the internal message of RESTEasy when no endpoint has the path")
+  public void notFoundPath() {
+    given().when().get("/test/nothing/here").then()
+        .statusCode(404)
+        .body("errors[0].message", equalTo("Resource not found"));
+  }
+
+  @Test
   @DisplayName("return 409 with the message of the ConflictException")
   public void conflict() {
     given().when().get("/test/conflict").then()

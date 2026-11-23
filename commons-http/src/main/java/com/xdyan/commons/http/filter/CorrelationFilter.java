@@ -4,6 +4,7 @@ import com.amazonaws.xray.entities.TraceHeader;
 import com.amazonaws.xray.entities.TraceID;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.xdyan.commons.http.HttpConfig;
+import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
@@ -22,27 +23,44 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.ofNullable;
 
 /**
- * Puts the request id, the trace id and the client (X-Client-Name, X-Client-Version) in the MDC of every log of the
- * request, and logs the request body and the status and body of the response (cut at
- * xdyan.commons.http.log.max-body-length). The exception of an error response is logged by its provider (ErrorLog).
+ * Puts the request id, the X-Ray trace id, the method, the path and the client (X-Client-Name, X-Client-Version) in the
+ * MDC of every log of the request, plus the fields of the app ({@link MdcContributor}), and logs the request body and
+ * the status and body of the response (cut at xdyan.commons.http.log.max-body-length). The exception of an error
+ * response is logged by its provider (ErrorLog).
+ * <ul>
+ *   <li>request_id: the id of the request in API Gateway, which it returns to the client in the header
+ *   apigw-requestid: from an error seen in the client to its logs</li>
+ *   <li>trace_id: the X-Ray trace of the invocation, with the subsegments of @XRayTraced. Empty outside Lambda</li>
+ * </ul>
  */
 @Slf4j
 @Provider
 public class CorrelationFilter implements ContainerRequestFilter, ContainerResponseFilter, WriterInterceptor {
 
   private static final String AGW_REQUEST_ID_KEY = "x-agw-request-id";
-  private static final String AWS_TRACE_ID_KEY = "X-Amzn-Trace-Id";
   private static final String XRAY_TRACE_HEADER_PROPERTY = "com.amazonaws.xray.traceHeader";
   private static final String CLIENT_NAME_KEY = "X-Client-Name";
   private static final String CLIENT_VERSION_KEY = "X-Client-Version";
-  private static final String STATUS_KEY = "status";
+  private static final String REQUEST_ID = "request_id";
+  private static final String TRACE_ID = "trace_id";
+  private static final String METHOD = "method";
+  private static final String PATH = "path";
+  private static final String STATUS = "status";
+  private static final String CLIENT_NAME = "client_name";
+  private static final String CLIENT_VERSION = "client_version";
   private static final String EMPTY = "";
+
+  /** The MDC fields of the library: an {@link MdcContributor} can't replace them */
+  public static final Set<String> FIELDS = Set.of(REQUEST_ID, TRACE_ID, METHOD, PATH, STATUS, CLIENT_NAME,
+      CLIENT_VERSION);
 
   @Inject
   Instance<APIGatewayV2HTTPEvent> httpEventInstance;
@@ -51,20 +69,19 @@ public class CorrelationFilter implements ContainerRequestFilter, ContainerRespo
   @Inject
   Instance<HttpConfig> config;
 
+  @Inject
+  @Any
+  Instance<MdcContributor> contributors;
+
   @Override
   public void filter(ContainerRequestContext requestContext) {
-    var apiGwRequestId = resolveRequestId(requestContext);
-    var method = ofNullable(requestContext.getMethod()).orElse(EMPTY);
-    var path = ofNullable(requestContext.getUriInfo().getRequestUri().toString()).orElse(EMPTY);
-    var traceId = ofNullable(requestContext.getHeaderString(AWS_TRACE_ID_KEY)).orElse(EMPTY);
-
-    MDC.put("requestId", apiGwRequestId);
-    MDC.put("method", method);
-    MDC.put("path", path);
-    MDC.put("X-Amzn-Trace-Id", traceId);
-    MDC.put("trace_id", resolveTraceRoot());
-    MDC.put("client_name", ofNullable(requestContext.getHeaderString(CLIENT_NAME_KEY)).orElse(EMPTY));
-    MDC.put("client_version", ofNullable(requestContext.getHeaderString(CLIENT_VERSION_KEY)).orElse(EMPTY));
+    MDC.put(REQUEST_ID, resolveRequestId(requestContext));
+    MDC.put(TRACE_ID, resolveTraceRoot());
+    MDC.put(METHOD, ofNullable(requestContext.getMethod()).orElse(EMPTY));
+    MDC.put(PATH, ofNullable(requestContext.getUriInfo().getRequestUri().toString()).orElse(EMPTY));
+    MDC.put(CLIENT_NAME, ofNullable(requestContext.getHeaderString(CLIENT_NAME_KEY)).orElse(EMPTY));
+    MDC.put(CLIENT_VERSION, ofNullable(requestContext.getHeaderString(CLIENT_VERSION_KEY)).orElse(EMPTY));
+    putFieldsOfTheApp(requestContext);
     // In Lambda a request without body (e.g. a GET) still has an entity, with no bytes
     if (!requestContext.hasEntity()) {
       log.info("Request Body is empty");
@@ -93,7 +110,7 @@ public class CorrelationFilter implements ContainerRequestFilter, ContainerRespo
    */
   @Override
   public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-    MDC.put(STATUS_KEY, String.valueOf(responseContext.getStatus()));
+    MDC.put(STATUS, String.valueOf(responseContext.getStatus()));
     if (!responseContext.hasEntity()) {
       log.info("Response {}: Body is empty", responseContext.getStatus());
       MDC.clear();
@@ -110,7 +127,7 @@ public class CorrelationFilter implements ContainerRequestFilter, ContainerRespo
       context.proceed();
       byte[] responseBytes = baos.toByteArray();
 
-      var status = ofNullable(MDC.get(STATUS_KEY)).orElse(EMPTY);
+      var status = ofNullable(MDC.get(STATUS)).orElse(EMPTY);
       if (responseBytes.length == 0) {
         log.info("Response {}: Body is empty", status);
       } else {
@@ -139,8 +156,37 @@ public class CorrelationFilter implements ContainerRequestFilter, ContainerRespo
     return config.get().log().maxBodyLength();
   }
 
+  private void putFieldsOfTheApp(ContainerRequestContext requestContext) {
+    for (MdcContributor contributor : contributors) {
+      try {
+        Map<String, String> fields = contributor.fields(requestContext);
+        if (fields == null) {
+          continue;
+        }
+        fields.forEach((key, value) -> {
+          if (FIELDS.contains(key)) {
+            log.warn("MDC field '{}' of {} ignored: it is a field of the library", key, contributor.getClass().getName());
+          } else if (key != null && value != null) {
+            MDC.put(key, value);
+          }
+        });
+      } catch (RuntimeException e) {
+        log.error("MDC fields of {} not added", contributor.getClass().getName(), e);
+      }
+    }
+  }
+
+  /**
+   * The Lambda runtime sets the property on every invocation ("Root=1-...;Parent=...;Sampled=1"). Outside Lambda there
+   * is none, or the mock event server of the tests sets a UUID: parsing it would log "Malformed TraceHeader String
+   * input" as ERROR on every request.
+   */
   private String resolveTraceRoot() {
-    return ofNullable(TraceHeader.fromString(System.getProperty(XRAY_TRACE_HEADER_PROPERTY)).getRootTraceId())
+    String header = System.getProperty(XRAY_TRACE_HEADER_PROPERTY);
+    if (header == null || !header.contains("Root=")) {
+      return EMPTY;
+    }
+    return ofNullable(TraceHeader.fromString(header).getRootTraceId())
         .map(TraceID::toString)
         .orElse(EMPTY);
   }
