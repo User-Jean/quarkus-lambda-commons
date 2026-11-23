@@ -31,13 +31,44 @@ Lo que la app sigue escribiendo:
 
 ## Logs de un request
 
-Con el MDC del request (`requestId`, `trace_id`, `path`, `client_name`) en cada línea:
+Con el MDC del request en cada línea:
 
 ```
 INFO  Request Body: {"name": "Teclado", "unit_price": 10.123}
 WARN  [ERROR 400] BadRequestException: The field 'unit_price' must have at most 2 decimals
 INFO  Response 400: Body: {"name":"lambda-http-orders","message":"Validation error occurred",...}
 ```
+
+Campos del MDC (`mdc` en el JSON del log):
+
+| Campo | Qué es |
+|---|---|
+| `request_id` | El id del request en API Gateway. API Gateway lo devuelve al cliente en el header `apigw-requestid`: con él se llega de un error del frontend a sus logs |
+| `trace_id` | La traza de X-Ray de la invocación, con los subsegmentos de `@XRayTraced`. Vacío fuera de Lambda |
+| `method`, `path`, `status` | El request y el status de la respuesta |
+| `client_name`, `client_version` | Los headers `X-Client-Name` y `X-Client-Version`, si el cliente los manda |
+
+El header `X-Amzn-Trace-Id` no está: en un HTTP API de API Gateway no es la traza de X-Ray de la lambda.
+
+### Campos propios de la app
+
+Un bean que implemente `MdcContributor` agrega campos al MDC de cada request, sin declarar nada más:
+
+```java
+@ApplicationScoped
+public class TenantMdc implements MdcContributor {
+
+  @Override
+  public Map<String, String> fields(ContainerRequestContext request) {
+    return Map.of("tenant_id", request.getHeaderString("X-Tenant-Id"));
+  }
+}
+```
+
+- Los campos salen en todas las líneas del request, desde `Request Body`, y la librería los limpia al terminar
+- Nombres en snake_case, como los de la librería. Un campo de la librería no se puede reemplazar (queda un `WARN`) y un
+  valor `null` no se agrega
+- Si el bean lanza una excepción, queda en el log como `ERROR` y el request sigue sin esos campos
 
 - Un **4xx** es un `WARN` con la excepción y su mensaje, sin stack trace
 - Un **5xx** o una excepción inesperada es un `ERROR` con el stack trace. La respuesta es un 500 con el mismo formato que

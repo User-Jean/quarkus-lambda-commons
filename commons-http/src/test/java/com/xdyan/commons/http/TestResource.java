@@ -34,6 +34,12 @@ public class TestResource {
   }
 
   @GET
+  @Path("/number/{id}")
+  public Map<String, Long> number(@PathParam("id") Long id) {
+    return Map.of("id", id);
+  }
+
+  @GET
   @Path("/conflict")
   public String conflict() {
     throw new ConflictException("An item named 'x' already exists");

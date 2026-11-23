@@ -12,8 +12,15 @@ import java.util.List;
 
 import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 
+/**
+ * 404 with the message of the NotFoundException (e.g. "Item not found"). The 404 of RESTEasy itself (no endpoint for
+ * the path, a path parameter that can't be converted, like /item/abc) has internal details in its message (the whole
+ * URL, the parameter): the client gets "Resource not found" and the log keeps the details.
+ */
 @Provider
 public class NotFoundProvider implements ExceptionMapper<NotFoundException> {
+
+  private static final String GENERIC_MESSAGE = "Resource not found";
 
   @ConfigProperty(name = "quarkus.application.name")
   String artifactId;
@@ -21,12 +28,12 @@ public class NotFoundProvider implements ExceptionMapper<NotFoundException> {
   @Override
   public Response toResponse(NotFoundException exception) {
     var errorDetail = new ErrorMessage.Detail();
-    errorDetail.setMessage(exception.getMessage());
+    errorDetail.setMessage(messageOf(exception));
     errorDetail.setComponent(artifactId);
 
     var error = new ErrorMessage();
     error.setName(artifactId);
-    error.setMessage("Resource not found");
+    error.setMessage(GENERIC_MESSAGE);
     error.setCode(NOT_FOUND.getStatusCode());
     error.setErrors(List.of(errorDetail));
 
@@ -35,5 +42,13 @@ public class NotFoundProvider implements ExceptionMapper<NotFoundException> {
     return Response.status(NOT_FOUND)
         .entity(error)
         .build();
+  }
+
+  private static String messageOf(NotFoundException exception) {
+    String message = exception.getMessage();
+    if (message == null || message.startsWith("RESTEASY") || message.startsWith("HTTP 404")) {
+      return GENERIC_MESSAGE;
+    }
+    return message;
   }
 }
