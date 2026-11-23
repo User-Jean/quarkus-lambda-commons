@@ -142,6 +142,9 @@
                     <sourceFolder>src/main/java</sourceFolder>
                     <dateLibrary>java8</dateLibrary>
                     <interfaceOnly>true</interfaceOnly>
+                    <!-- Without it (7.27+) it also generates RestApplication with @ApplicationPath from the path of
+                         servers[0].url (e.g. /api/v1): every endpoint would move under it and answer 404 -->
+                    <generateRootResources>false</generateRootResources>
                     <library>quarkus</library>
                     <useJakartaEe>true</useJakartaEe>
                     <returnResponse>true</returnResponse>
