@@ -67,4 +67,7 @@ com.xdyan.commons
   new version
 - The metadata Maven Central requires (url, licenses, developers, scm) is in `quarkus-lambda-dependencies` and inherited as
   is; a new module needs its own `name` and `description`
+- Dependabot (`.github/dependabot.yml`) proposes the new versions of Quarkus (one group), the build plugins and the
+  actions. A Quarkus upgrade (`quarkus.platform.version` in `quarkus-lambda-dependencies`) reaches every app with the
+  parent: it is its own minor release, and its description says the Quarkus version
 - No pom writes a version: `.github/scripts/check-version-unchanged.sh` (PR validation) fails otherwise

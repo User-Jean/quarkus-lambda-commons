@@ -1,0 +1,36 @@
+# Opens a pull request when a dependency or an action has a new version; the PR validation runs its tests.
+# Merging one doesn't publish anything: the next Release does. The versions are in quarkus-lambda-dependencies/pom.xml.
+# A new Quarkus version reaches every app with quarkus-lambda-parent, so it goes in its own minor release.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    groups:
+      # The BOM and the plugin of Quarkus always move together
+      quarkus:
+        patterns:
+          - "io.quarkus*"
+      # Build only (compiler, surefire, source, javadoc, gpg, central-publishing, jandex, openapi-generator)
+      build-plugins:
+        patterns:
+          - "org.apache.maven.plugins:*"
+          - "org.sonatype.central:*"
+          - "io.smallrye:jandex-maven-plugin"
+          - "org.openapitools:openapi-generator-maven-plugin"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns:
+          - "*"

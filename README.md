@@ -10,7 +10,8 @@ de los módulos se activan solos, sin declarar nada: los jars traen su índice J
 | `quarkus-lambda-commons-core` | Cualquier lambda (HTTP, SQS, programada) | `quarkus-amazon-lambda-xray`, `@XRayTraced` (subsegmentos de X-Ray por capa) y el bean `Clock` |
 | `quarkus-lambda-commons-http` | Lambdas de API HTTP. Incluye `core` | El stack HTTP: `quarkus-amazon-lambda-http`, `quarkus-resteasy-jackson` y `quarkus-hibernate-validator`, que la app no declara. Respuestas de error `{name, message, code, errors[]}` para 400, 404 y 409, `CorrelationFilter` (MDC y logs de los bodies) y `DateTimeMapper` (`dd/MM/yyyy`) |
 
-Todos salen juntos con la misma versión. El parent de una versión usa los módulos de esa misma versión y la versión de
+La versión de Quarkus de cada release está en `quarkus-lambda-dependencies/pom.xml` (`quarkus.platform.version`); hoy
+es 3.34.4. Todos salen juntos con la misma versión. El parent de una versión usa los módulos de esa misma versión y la versión de
 Quarkus con la que se probaron, así que una app nunca mezcla versiones incompatibles.
 
 ## Uso
@@ -143,6 +144,13 @@ xdyan:
 
 La versión no está en `pom.xml`: sale de los tags `vX.Y.Z` (`.mvn/`), igual que en las lambdas. Sin tag,
 `./mvnw install` deja en el repositorio local de Maven una versión `X.Y.Z-<n>-g<sha>-SNAPSHOT` para probarla en una app.
+
+### Dependencias
+
+Dependabot (`.github/dependabot.yml`) abre un PR cada lunes si hay versiones nuevas de Quarkus o de los plugins, y cada
+mes si hay de las actions de GitHub. El PR validation corre los tests en cada uno. Hacer merge no publica nada: lo
+publica el siguiente Release. Una versión nueva de Quarkus cambia con qué apps es compatible la librería, así que sale
+en su propio release `minor` y su descripción dice la versión de Quarkus.
 
 ## Publicar
 
