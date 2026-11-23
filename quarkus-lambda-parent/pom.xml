@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<!--
+  Parent of the Quarkus lambdas: the versions of quarkus-lambda-dependencies (Quarkus, quarkus-lambda-commons, the
+  libraries and the plugins, so they are always compatible), the dependencies every lambda uses and the build. The app
+  sets it as its <parent>, declares its own dependencies without <version> and the quarkus plugin with only groupId
+  and artifactId. With src/main/resources/openapi.yaml it is contract-first by itself (profile contract-first).
+
+  An app can't remove a dependency it inherits: only the ones every lambda uses go in <dependencies>.
+-->
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.xdyan</groupId>
+    <artifactId>quarkus-lambda-dependencies</artifactId>
+    <version>${revision}</version>
+    <relativePath>../quarkus-lambda-dependencies/pom.xml</relativePath>
+  </parent>
+  <artifactId>quarkus-lambda-parent</artifactId>
+  <packaging>pom</packaging>
+  <name>quarkus-lambda-parent</name>
+  <description>Parent of the Quarkus lambdas: versions, common dependencies and build</description>
+
+  <dependencies>
+    <!-- application.yaml -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-config-yaml</artifactId>
+    </dependency>
+    <!-- JSON logs for CloudWatch -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-logging-json</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!-- ${...} in src/main/resources (e.g. ${project.version} in application.yaml) is replaced by Maven -->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
+    <pluginManagement>
+      <plugins>
+        <!-- The app declares it (groupId and artifactId) -->
+        <plugin>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-maven-plugin</artifactId>
+          <extensions>true</extensions>
+          <executions>
+            <execution>
+              <goals>
+                <goal>build</goal>
+                <goal>generate-code</goal>
+                <goal>generate-code-tests</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <!-- Lombok and MapStruct: a processor without its dependency in the module does nothing -->
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+            <path>
+              <groupId>org.mapstruct</groupId>
+              <artifactId>mapstruct-processor</artifactId>
+              <version>${mapstruct.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <!-- Configured in quarkus-lambda-dependencies: the LogManager of Quarkus -->
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- Contract-first: active when the app has src/main/resources/openapi.yaml, nothing to declare. Generates the JAX-RS
+         interfaces (<groupId>.api) and the DTOs (<groupId>.api.model) into target/, and adds the library they use.
+         An app with quarkus-lambda-commons-http doesn't start in dev and tests without that file (ContractFirstCheck) -->
+    <profile>
+      <id>contract-first</id>
+      <activation>
+        <file>
+          <exists>${basedir}/src/main/resources/openapi.yaml</exists>
+        </file>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.openapitools</groupId>
+          <artifactId>jackson-databind-nullable</artifactId>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openapitools</groupId>
+            <artifactId>openapi-generator-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>generate-server</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>generate</goal>
+                </goals>
+                <configuration>
+                  <inputSpec>${project.basedir}/src/main/resources/openapi.yaml</inputSpec>
+                  <generatorName>jaxrs-spec</generatorName>
+                  <apiNameSuffix>Resource</apiNameSuffix>
+                  <configOptions>
+                    <apiPackage>${project.groupId}.api</apiPackage>
+                    <modelPackage>${project.groupId}.api.model</modelPackage>
+                    <sourceFolder>src/main/java</sourceFolder>
+                    <dateLibrary>java8</dateLibrary>
+                    <interfaceOnly>true</interfaceOnly>
+                    <library>quarkus</library>
+                    <useJakartaEe>true</useJakartaEe>
+                    <returnResponse>true</returnResponse>
+                    <useTags>true</useTags>
+                    <useSwaggerAnnotations>false</useSwaggerAnnotations>
+                    <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                    <!-- A list not sent is null, like any other optional field, not an empty list -->
+                    <containerDefaultToNull>true</containerDefaultToNull>
+                    <additionalModelTypeAnnotations>
+                      @io.quarkus.runtime.annotations.RegisterForReflection
+                    </additionalModelTypeAnnotations>
+                    <!-- The enums too: without it the native image doesn't see @JsonValue and writes name() (UP instead
+                         of up); the JVM tests don't catch it -->
+                    <additionalEnumTypeAnnotations>
+                      @io.quarkus.runtime.annotations.RegisterForReflection
+                    </additionalEnumTypeAnnotations>
+                  </configOptions>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- ./mvnw package -Pnative: the native binary of the lambda (and its tests with failsafe, if it has any) -->
+    <profile>
+      <id>native</id>
+      <activation>
+        <property>
+          <name>native</name>
+        </property>
+      </activation>
+      <properties>
+        <quarkus.native.enabled>true</quarkus.native.enabled>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+                <configuration>
+                  <systemPropertyVariables>
+                    <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+                    <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                    <maven.home>${maven.home}</maven.home>
+                  </systemPropertyVariables>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

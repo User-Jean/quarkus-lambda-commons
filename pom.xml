@@ -1,86 +1,36 @@
 <?xml version="1.0"?>
-<project child.project.url.inherit.append.path="false" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+<!--
+  Build of quarkus-lambda-commons: the modules and what only the library needs (Jandex index, Lombok, test
+  dependencies). The versions and the metadata come from quarkus-lambda-dependencies, the same versions the apps get
+  through quarkus-lambda-parent. Not quarkus-lambda-parent itself: its dependencies would reach every app through the
+  modules.
+-->
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.xdyan</groupId>
+  <parent>
+    <groupId>com.xdyan</groupId>
+    <artifactId>quarkus-lambda-dependencies</artifactId>
+    <version>${revision}</version>
+    <relativePath>quarkus-lambda-dependencies/pom.xml</relativePath>
+  </parent>
   <artifactId>quarkus-lambda-commons-parent</artifactId>
-  <!-- Set from the git tags by maven-git-versioning-extension (.mvn/), don't edit it -->
-  <version>${revision}</version>
   <packaging>pom</packaging>
   <name>quarkus-lambda-commons</name>
   <description>Shared Quarkus code for AWS Lambda</description>
-  <url>https://github.com/User-Jean/quarkus-lambda-commons</url>
-
-  <!-- Required by Maven Central, inherited by the modules as they are (without appending their artifactId to the
-       url and scm: child.*.inherit.append.path) -->
-  <licenses>
-    <license>
-      <name>Apache-2.0</name>
-      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <developers>
-    <developer>
-      <id>user-jean</id>
-      <name>xdyan</name>
-      <url>https://github.com/User-Jean</url>
-    </developer>
-  </developers>
-  <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false"
-       child.scm.url.inherit.append.path="false">
-    <connection>scm:git:https://github.com/User-Jean/quarkus-lambda-commons.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/User-Jean/quarkus-lambda-commons.git</developerConnection>
-    <url>https://github.com/User-Jean/quarkus-lambda-commons</url>
-  </scm>
 
   <modules>
+    <module>quarkus-lambda-dependencies</module>
+    <module>quarkus-lambda-parent</module>
     <module>commons-core</module>
     <module>commons-http</module>
   </modules>
-
-  <properties>
-    <revision>0.0.0-SNAPSHOT</revision>
-    <maven.compiler.release>25</maven.compiler.release>
-    <maven.compiler.parameters>true</maven.compiler.parameters>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <!-- The apps must use this Quarkus version or a compatible one -->
-    <quarkus.platform.version>3.34.4</quarkus.platform.version>
-    <compiler-plugin.version>3.14.1</compiler-plugin.version>
-    <surefire-plugin.version>3.5.4</surefire-plugin.version>
-    <jandex-plugin.version>3.2.4</jandex-plugin.version>
-    <lombok.version>1.18.42</lombok.version>
-    <source-plugin.version>3.3.1</source-plugin.version>
-    <javadoc-plugin.version>3.12.0</javadoc-plugin.version>
-    <gpg-plugin.version>3.2.8</gpg-plugin.version>
-    <central-publishing-plugin.version>0.12.0</central-publishing-plugin.version>
-  </properties>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-bom</artifactId>
-        <version>${quarkus.platform.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.xdyan</groupId>
-        <artifactId>quarkus-lambda-commons-core</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
 
   <dependencies>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>${lombok.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -90,19 +40,9 @@
   </dependencies>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>io.quarkus</groupId>
-          <artifactId>quarkus-maven-plugin</artifactId>
-          <version>${quarkus.platform.version}</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${compiler-plugin.version}</version>
         <configuration>
           <annotationProcessorPaths>
             <path>
@@ -113,12 +53,14 @@
           </annotationProcessorPaths>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
       <!-- META-INF/jandex.idx in each jar: without it Quarkus doesn't discover the beans, providers and
            interceptors of the library in the apps -->
       <plugin>
         <groupId>io.smallrye</groupId>
         <artifactId>jandex-maven-plugin</artifactId>
-        <version>${jandex-plugin.version}</version>
         <executions>
           <execution>
             <id>make-index</id>
@@ -128,87 +70,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${surefire-plugin.version}</version>
-        <configuration>
-          <systemPropertyVariables>
-            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-            <maven.home>${maven.home}</maven.home>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <!-- Publishing to Maven Central (workflow "Release"): sources, javadoc, GPG signatures and the upload to the
-         Central Portal. Needs the server "central" in settings.xml (user token) and the GPG key -->
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>${source-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>${javadoc-plugin.version}</version>
-            <configuration>
-              <!-- Not every public method has javadoc: a missing comment is not an error -->
-              <doclint>none</doclint>
-            </configuration>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>${gpg-plugin.version}</version>
-            <configuration>
-              <!-- The passphrase comes from the env var MAVEN_GPG_PASSPHRASE, without a terminal -->
-              <bestPractices>true</bestPractices>
-            </configuration>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- Uploads the three modules as one deployment and publishes it once validated. A version published to
-               Maven Central can never be changed nor deleted -->
-          <plugin>
-            <groupId>org.sonatype.central</groupId>
-            <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>${central-publishing-plugin.version}</version>
-            <extensions>true</extensions>
-            <configuration>
-              <publishingServerId>central</publishingServerId>
-              <autoPublish>true</autoPublish>
-              <waitUntil>published</waitUntil>
-              <deploymentName>quarkus-lambda-commons ${project.version}</deploymentName>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

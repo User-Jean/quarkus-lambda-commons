@@ -11,6 +11,8 @@ public interface HttpConfig {
 
   Log log();
 
+  Openapi openapi();
+
   interface Log {
     /**
      * Characters of the request and response bodies written to the log; the rest is cut. Don't send in the bodies
@@ -18,5 +20,14 @@ public interface HttpConfig {
      */
     @WithDefault("500")
     int maxBodyLength();
+  }
+
+  interface Openapi {
+    /**
+     * The HTTP lambdas are contract-first: in dev and tests the app doesn't start without
+     * src/main/resources/openapi.yaml (ContractFirstCheck). false only for a lambda without a contract, e.g. a webhook.
+     */
+    @WithDefault("true")
+    boolean required();
   }
 }

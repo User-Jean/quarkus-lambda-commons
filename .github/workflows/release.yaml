@@ -100,7 +100,7 @@ jobs:
             echo "::error::Maven version is $ACTUAL, expected ${{ steps.version.outputs.version }}"
             exit 1
           fi
-          ./mvnw -B -Prelease clean deploy
+          ./mvnw -B -Ppublish-central clean deploy
 
       - name: Push tag
         run: git push origin "v${{ steps.version.outputs.version }}"

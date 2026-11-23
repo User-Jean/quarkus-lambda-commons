@@ -1,24 +1,64 @@
 # quarkus-lambda-commons
 
-Código compartido de Quarkus para lambdas de AWS. Cada lambda agrega solo el módulo que necesita y los beans se activan
-solos, sin declarar nada: los jars traen su índice Jandex.
+Código compartido de Quarkus para lambdas de AWS, y el parent que decide con qué versiones se construyen. Los beans
+de los módulos se activan solos, sin declarar nada: los jars traen su índice Jandex.
 
-| Módulo | Para | Trae |
+| Artefacto | Para | Trae |
 |---|---|---|
-| `quarkus-lambda-commons-core` | Cualquier lambda (HTTP, SQS, programada) | `@XRayTraced` (subsegmentos de X-Ray por capa) y el bean `Clock` |
-| `quarkus-lambda-commons-http` | Lambdas de API HTTP. Incluye `core` | Respuestas de error `{name, message, code, errors[]}` para 400, 404 y 409, `CorrelationFilter` (MDC y logs de los bodies) y `DateTimeMapper` (`dd/MM/yyyy`) |
+| `quarkus-lambda-parent` | El `<parent>` de cada lambda | Las versiones (de `quarkus-lambda-dependencies`); las dependencias que usa toda lambda: `quarkus-config-yaml`, `quarkus-logging-json`, Lombok, MapStruct y `quarkus-junit`; y el build: el plugin de Quarkus, el perfil `native` y el generador del OpenAPI |
+| `quarkus-lambda-dependencies` | El parent de la librería y de `quarkus-lambda-parent`. Una app no lo usa | Solo las versiones: Quarkus, los módulos de abajo, Lombok, MapStruct y los plugins |
+| `quarkus-lambda-commons-core` | Cualquier lambda (HTTP, SQS, programada) | `quarkus-amazon-lambda-xray`, `@XRayTraced` (subsegmentos de X-Ray por capa) y el bean `Clock` |
+| `quarkus-lambda-commons-http` | Lambdas de API HTTP. Incluye `core` | El stack HTTP: `quarkus-amazon-lambda-http`, `quarkus-resteasy-jackson` y `quarkus-hibernate-validator`, que la app no declara. Respuestas de error `{name, message, code, errors[]}` para 400, 404 y 409, `CorrelationFilter` (MDC y logs de los bodies) y `DateTimeMapper` (`dd/MM/yyyy`) |
 
-Usa Quarkus 3.34.4: la app debe usar la misma versión o una compatible.
+La versión de Quarkus de cada release está en `quarkus-lambda-dependencies/pom.xml` (`quarkus.platform.version`); hoy
+es 3.34.4. Todos salen juntos con la misma versión. El parent de una versión usa los módulos de esa misma versión y la versión de
+Quarkus con la que se probaron, así que una app nunca mezcla versiones incompatibles.
 
 ## Uso
 
 ```xml
-<dependency>
+<parent>
   <groupId>com.xdyan</groupId>
-  <artifactId>quarkus-lambda-commons-http</artifactId>
-  <version>0.1.0</version>
-</dependency>
+  <artifactId>quarkus-lambda-parent</artifactId>
+  <version>0.2.0</version>
+  <relativePath/>
+</parent>
+
+<dependencies>
+  <!-- Sin <version>: la decide el parent. Una lambda SQS o programada usa quarkus-lambda-commons-core -->
+  <dependency>
+    <groupId>com.xdyan</groupId>
+    <artifactId>quarkus-lambda-commons-http</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.quarkus</groupId>
+    <artifactId>quarkus-hibernate-orm</artifactId>
+  </dependency>
+  <!-- quarkus-config-yaml, quarkus-logging-json, Lombok, MapStruct y quarkus-junit ya vienen del parent -->
+</dependencies>
+
+<build>
+  <plugins>
+    <!-- Configurado en el parent: basta con declararlo -->
+    <plugin>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-maven-plugin</artifactId>
+    </plugin>
+  </plugins>
+</build>
 ```
+
+- **Contract-first**: una app con `src/main/resources/openapi.yaml` genera sola sus interfaces JAX-RS
+  (`<groupId>.api`) y sus DTOs (`<groupId>.api.model`) en `target/`, sin declarar el generador (perfil
+  `contract-first` del parent). Con `quarkus-lambda-commons-http` el contrato es obligatorio: sin ese archivo la app no
+  arranca en dev ni en los tests, con un mensaje que lo dice. En la lambda no se revisa
+- **Para subir Quarkus o la librería** se cambia solo la versión del parent
+- El parent también configura el compilador (Java 25, Lombok y MapStruct), los tests (surefire con el LogManager de
+  Quarkus), el filtrado de `src/main/resources` (`${...}` de Maven) y `./mvnw package -Pnative`
+- Una dependencia que el parent no maneja se declara con su versión, como en cualquier pom
+- Una app no puede quitar una dependencia que hereda: por eso el parent solo trae las que usa toda lambda. El stack
+  HTTP llega con `quarkus-lambda-commons-http`; lo demás (base de datos, `rest-assured`) lo declara cada app
+- La app hereda del parent la licencia, la url y el scm de esta librería; no afecta a una lambda, que no se publica
 
 Lo que la app sigue escribiendo:
 
@@ -88,6 +128,8 @@ xdyan:
     http:
       log:
         max-body-length: 500      # caracteres de los bodies en el log (default 500)
+      openapi:
+        required: true            # false solo para una lambda HTTP sin contrato, p. ej. un webhook (default true)
 ```
 
 `name` y `component` de los errores son `quarkus.application.name`, que Quarkus llena con el `artifactId` de la app.
@@ -145,5 +187,5 @@ ni tag ni versión: se corrige y se vuelve a correr.
 Para revisar localmente lo que se publicaría (jars de sources y javadoc incluidos), sin firmar ni subir:
 
 ```bash
-./mvnw -Prelease -Dgpg.skip -DskipTests clean verify
+./mvnw -Ppublish-central -Dgpg.skip -DskipTests clean verify
 ```
