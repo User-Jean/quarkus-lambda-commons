@@ -103,6 +103,13 @@ xdyan:
 La versión no está en `pom.xml`: sale de los tags `vX.Y.Z` (`.mvn/`), igual que en las lambdas. Sin tag,
 `./mvnw install` deja en el repositorio local de Maven una versión `X.Y.Z-<n>-g<sha>-SNAPSHOT` para probarla en una app.
 
+### Dependencias
+
+Dependabot (`.github/dependabot.yml`) abre un PR cada lunes si hay versiones nuevas de Quarkus o de los plugins, y cada
+mes si hay de las actions de GitHub. El PR validation corre los tests en cada uno. Hacer merge no publica nada: lo
+publica el siguiente Release. Una versión nueva de Quarkus cambia con qué apps es compatible la librería, así que sale
+en su propio release `minor` y su descripción dice la versión de Quarkus.
+
 ## Publicar
 
 Se publica en Maven Central con el workflow **Release** (Actions → Release → Run workflow, desde `main`):

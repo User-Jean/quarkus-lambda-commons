@@ -36,5 +36,7 @@ com.xdyan.commons
 - `./mvnw clean install` runs the tests of both modules and installs the jars in the local Maven repository
 - Published to Maven Central by the workflow `release.yaml` (profile `release` of the parent pom: sources, javadoc,
   GPG signature, `central-publishing-maven-plugin`). A published version is permanent: a fix is a new version
+- Dependabot (`.github/dependabot.yml`) proposes the new versions of Quarkus (one group), the build plugins and the
+  actions. A Quarkus upgrade is its own minor release, and the README says the Quarkus version the apps must use
 - The metadata Maven Central requires (url, licenses, developers, scm) is in the parent pom and inherited as is; a new
   module needs its own `name` and `description`
