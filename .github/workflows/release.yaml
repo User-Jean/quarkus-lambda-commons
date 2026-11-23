@@ -70,7 +70,8 @@ jobs:
           echo "Version: $VERSION"
 
       # Writes settings.xml with the server "central" (the user token of the Central Portal, read from the env vars)
-      # and imports the GPG key
+      # and imports the GPG key. The *-env-var inputs are names of env vars, not values. Since v6 the gpg plugin reads
+      # the passphrase from gpg-passphrase-env-var (default GPG_PASSPHRASE): without it, "No pinentry"
       - name: Set up Java
         uses: actions/setup-java@v6
         with:
@@ -78,9 +79,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
           server-id: central
-          server-username: CENTRAL_USERNAME
-          server-password: CENTRAL_PASSWORD
+          server-username-env-var: CENTRAL_USERNAME
+          server-password-env-var: CENTRAL_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase-env-var: MAVEN_GPG_PASSPHRASE
 
       # Local only until it is published: the extension reads the version from it
       - name: Tag locally
