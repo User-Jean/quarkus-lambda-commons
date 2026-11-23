@@ -2,8 +2,8 @@
 <!--
   Parent of the Quarkus lambdas: the versions of quarkus-lambda-dependencies (Quarkus, quarkus-lambda-commons, the
   libraries and the plugins, so they are always compatible), the dependencies every lambda uses and the build. The app
-  sets it as its <parent>, declares its own dependencies without <version>, and the quarkus plugin (and the OpenAPI
-  generator if it has src/main/resources/openapi.yaml) with only groupId and artifactId.
+  sets it as its <parent>, declares its own dependencies without <version> and the quarkus plugin with only groupId
+  and artifactId. With src/main/resources/openapi.yaml it is contract-first by itself (profile contract-first).
 
   An app can't remove a dependency it inherits: only the ones every lambda uses go in <dependencies>.
 -->
@@ -74,49 +74,6 @@
             </execution>
           </executions>
         </plugin>
-        <!-- The app declares it (groupId and artifactId) when it has src/main/resources/openapi.yaml: generates the
-             JAX-RS interfaces (<groupId>.api) and the DTOs (<groupId>.api.model) into target/ -->
-        <plugin>
-          <groupId>org.openapitools</groupId>
-          <artifactId>openapi-generator-maven-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>generate-server</id>
-              <phase>generate-sources</phase>
-              <goals>
-                <goal>generate</goal>
-              </goals>
-              <configuration>
-                <inputSpec>${project.basedir}/src/main/resources/openapi.yaml</inputSpec>
-                <generatorName>jaxrs-spec</generatorName>
-                <apiNameSuffix>Resource</apiNameSuffix>
-                <configOptions>
-                  <apiPackage>${project.groupId}.api</apiPackage>
-                  <modelPackage>${project.groupId}.api.model</modelPackage>
-                  <sourceFolder>src/main/java</sourceFolder>
-                  <dateLibrary>java8</dateLibrary>
-                  <interfaceOnly>true</interfaceOnly>
-                  <library>quarkus</library>
-                  <useJakartaEe>true</useJakartaEe>
-                  <returnResponse>true</returnResponse>
-                  <useTags>true</useTags>
-                  <useSwaggerAnnotations>false</useSwaggerAnnotations>
-                  <hideGenerationTimestamp>true</hideGenerationTimestamp>
-                  <!-- A list not sent is null, like any other optional field, not an empty list -->
-                  <containerDefaultToNull>true</containerDefaultToNull>
-                  <additionalModelTypeAnnotations>
-                    @io.quarkus.runtime.annotations.RegisterForReflection
-                  </additionalModelTypeAnnotations>
-                  <!-- The enums too: without it the native image doesn't see @JsonValue and writes name() (UP instead
-                       of up); the JVM tests don't catch it -->
-                  <additionalEnumTypeAnnotations>
-                    @io.quarkus.runtime.annotations.RegisterForReflection
-                  </additionalEnumTypeAnnotations>
-                </configOptions>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -147,6 +104,68 @@
   </build>
 
   <profiles>
+    <!-- Contract-first: active when the app has src/main/resources/openapi.yaml, nothing to declare. Generates the JAX-RS
+         interfaces (<groupId>.api) and the DTOs (<groupId>.api.model) into target/, and adds the library they use.
+         An app with quarkus-lambda-commons-http doesn't start in dev and tests without that file (ContractFirstCheck) -->
+    <profile>
+      <id>contract-first</id>
+      <activation>
+        <file>
+          <exists>${basedir}/src/main/resources/openapi.yaml</exists>
+        </file>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.openapitools</groupId>
+          <artifactId>jackson-databind-nullable</artifactId>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openapitools</groupId>
+            <artifactId>openapi-generator-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>generate-server</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>generate</goal>
+                </goals>
+                <configuration>
+                  <inputSpec>${project.basedir}/src/main/resources/openapi.yaml</inputSpec>
+                  <generatorName>jaxrs-spec</generatorName>
+                  <apiNameSuffix>Resource</apiNameSuffix>
+                  <configOptions>
+                    <apiPackage>${project.groupId}.api</apiPackage>
+                    <modelPackage>${project.groupId}.api.model</modelPackage>
+                    <sourceFolder>src/main/java</sourceFolder>
+                    <dateLibrary>java8</dateLibrary>
+                    <interfaceOnly>true</interfaceOnly>
+                    <library>quarkus</library>
+                    <useJakartaEe>true</useJakartaEe>
+                    <returnResponse>true</returnResponse>
+                    <useTags>true</useTags>
+                    <useSwaggerAnnotations>false</useSwaggerAnnotations>
+                    <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                    <!-- A list not sent is null, like any other optional field, not an empty list -->
+                    <containerDefaultToNull>true</containerDefaultToNull>
+                    <additionalModelTypeAnnotations>
+                      @io.quarkus.runtime.annotations.RegisterForReflection
+                    </additionalModelTypeAnnotations>
+                    <!-- The enums too: without it the native image doesn't see @JsonValue and writes name() (UP instead
+                         of up); the JVM tests don't catch it -->
+                    <additionalEnumTypeAnnotations>
+                      @io.quarkus.runtime.annotations.RegisterForReflection
+                    </additionalEnumTypeAnnotations>
+                  </configOptions>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <!-- ./mvnw package -Pnative: the native binary of the lambda (and its tests with failsafe, if it has any) -->
     <profile>
       <id>native</id>

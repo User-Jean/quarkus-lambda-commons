@@ -38,20 +38,19 @@ Quarkus con la que se probaron, así que una app nunca mezcla versiones incompat
 
 <build>
   <plugins>
-    <!-- Configurados en el parent: basta con declararlos -->
+    <!-- Configurado en el parent: basta con declararlo -->
     <plugin>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-maven-plugin</artifactId>
-    </plugin>
-    <!-- Solo si la app tiene src/main/resources/openapi.yaml: genera <groupId>.api y <groupId>.api.model -->
-    <plugin>
-      <groupId>org.openapitools</groupId>
-      <artifactId>openapi-generator-maven-plugin</artifactId>
     </plugin>
   </plugins>
 </build>
 ```
 
+- **Contract-first**: una app con `src/main/resources/openapi.yaml` genera sola sus interfaces JAX-RS
+  (`<groupId>.api`) y sus DTOs (`<groupId>.api.model`) en `target/`, sin declarar el generador (perfil
+  `contract-first` del parent). Con `quarkus-lambda-commons-http` el contrato es obligatorio: sin ese archivo la app no
+  arranca en dev ni en los tests, con un mensaje que lo dice. En la lambda no se revisa
 - **Para subir Quarkus o la librería** se cambia solo la versión del parent
 - El parent también configura el compilador (Java 25, Lombok y MapStruct), los tests (surefire con el LogManager de
   Quarkus), el filtrado de `src/main/resources` (`${...}` de Maven) y `./mvnw package -Pnative`
@@ -128,6 +127,8 @@ xdyan:
     http:
       log:
         max-body-length: 500      # caracteres de los bodies en el log (default 500)
+      openapi:
+        required: true            # false solo para una lambda HTTP sin contrato, p. ej. un webhook (default true)
 ```
 
 `name` y `component` de los errores son `quarkus.application.name`, que Quarkus llena con el `artifactId` de la app.

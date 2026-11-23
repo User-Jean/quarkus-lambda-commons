@@ -18,6 +18,7 @@ com.xdyan.commons
 ├── clock/   (core) ClockProducer (@DefaultBean), ClockConfig
 └── http/    (http) HttpConfig
     ├── error/    ErrorMessage, ErrorLog, ConflictException, InvalidFieldsException, HttpErrorClassifier, provider/*
+    ├── contract/ ContractFirstCheck
     ├── filter/   CorrelationFilter, MdcContributor
     └── mapper/   DateTimeMapper
 ```
@@ -25,6 +26,10 @@ com.xdyan.commons
 ## Rules
 
 - `core` must work in any lambda: no JAX-RS, RESTEasy or API Gateway classes. What depends on HTTP goes in `http`
+- The HTTP lambdas are contract-first: the profile `contract-first` of `quarkus-lambda-parent` (active when the app has
+  `src/main/resources/openapi.yaml`) runs the generator and adds `jackson-databind-nullable`; `ContractFirstCheck`
+  fails the start in dev and tests without that file (`xdyan.commons.http.openapi.required=false` turns it off). Not
+  checked in prod: the native image doesn't include the file
 - Each module is the starter of its kind of lambda: `http` brings the HTTP stack (`quarkus-amazon-lambda-http`,
   `quarkus-resteasy-jackson`, `quarkus-hibernate-validator`) and the apps don't declare it. Changing or removing one of
   those dependencies breaks the apps: say it in the release

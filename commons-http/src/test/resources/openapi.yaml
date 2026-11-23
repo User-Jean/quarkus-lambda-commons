@@ -1,0 +1,7 @@
+# The contract of the tests: the module acts as an app, and an app with commons-http is contract-first
+# (ContractFirstCheck). Nothing is generated from it: the library doesn't use the OpenAPI generator.
+openapi: 3.0.3
+info:
+  title: quarkus-lambda-commons-http tests
+  version: 1.0.0
+paths: {}
