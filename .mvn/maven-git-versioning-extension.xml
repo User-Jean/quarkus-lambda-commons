@@ -4,6 +4,8 @@
   - commit with a tag vX.Y.Z          → X.Y.Z
   - commits after the last tag vX.Y.Z → X.Y.Z-<commits since the tag>-g<sha>-SNAPSHOT
   - no tags                           → 0.0.0-SNAPSHOT
+  The same version goes to the property quarkus-lambda-commons.version of quarkus-lambda-parent: the apps that use it
+  as parent get the modules of the library in that version.
 -->
 <configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -16,15 +18,24 @@
     <ref type="tag">
       <pattern><![CDATA[v(?<version>\d+\.\d+\.\d+)]]></pattern>
       <version>${ref.version}</version>
+      <properties>
+        <quarkus-lambda-commons.version>${ref.version}</quarkus-lambda-commons.version>
+      </properties>
     </ref>
     <ref type="branch">
       <pattern>.+</pattern>
       <version>${describe.tag.version}-${describe.distance}-g${commit.short}-SNAPSHOT</version>
+      <properties>
+        <quarkus-lambda-commons.version>${describe.tag.version}-${describe.distance}-g${commit.short}-SNAPSHOT</quarkus-lambda-commons.version>
+      </properties>
     </ref>
   </refs>
 
   <!-- Detached HEAD without a tag (e.g. git checkout <sha>) -->
   <rev>
     <version>${describe.tag.version}-${describe.distance}-g${commit.short}-SNAPSHOT</version>
+    <properties>
+      <quarkus-lambda-commons.version>${describe.tag.version}-${describe.distance}-g${commit.short}-SNAPSHOT</quarkus-lambda-commons.version>
+    </properties>
   </rev>
 </configuration>

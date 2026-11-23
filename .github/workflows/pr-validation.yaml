@@ -21,8 +21,8 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Check the PR doesn't change the version
-        run: .github/scripts/check-version-unchanged.sh "origin/${{ github.base_ref }}"
+      - name: Check no version is written by hand
+        run: .github/scripts/check-version-unchanged.sh
 
       - name: Set up Java
         uses: actions/setup-java@v5

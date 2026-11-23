@@ -1,24 +1,60 @@
 # quarkus-lambda-commons
 
-Código compartido de Quarkus para lambdas de AWS. Cada lambda agrega solo el módulo que necesita y los beans se activan
-solos, sin declarar nada: los jars traen su índice Jandex.
+Código compartido de Quarkus para lambdas de AWS, y el parent que decide con qué versiones se construyen. Los beans
+de los módulos se activan solos, sin declarar nada: los jars traen su índice Jandex.
 
-| Módulo | Para | Trae |
+| Artefacto | Para | Trae |
 |---|---|---|
+| `quarkus-lambda-parent` | El `<parent>` de cada lambda | Las versiones de Quarkus, de los módulos de abajo, de Lombok, MapStruct y los plugins, y la configuración del build: el plugin de Quarkus, el perfil `native` y el generador del OpenAPI |
 | `quarkus-lambda-commons-core` | Cualquier lambda (HTTP, SQS, programada) | `@XRayTraced` (subsegmentos de X-Ray por capa) y el bean `Clock` |
 | `quarkus-lambda-commons-http` | Lambdas de API HTTP. Incluye `core` | Respuestas de error `{name, message, code, errors[]}` para 400, 404 y 409, `CorrelationFilter` (MDC y logs de los bodies) y `DateTimeMapper` (`dd/MM/yyyy`) |
 
-Usa Quarkus 3.34.4: la app debe usar la misma versión o una compatible.
+Todos salen juntos con la misma versión. El parent de una versión usa los módulos de esa misma versión y la versión de
+Quarkus con la que se probaron, así que una app nunca mezcla versiones incompatibles.
 
 ## Uso
 
 ```xml
-<dependency>
+<parent>
   <groupId>com.xdyan</groupId>
-  <artifactId>quarkus-lambda-commons-http</artifactId>
-  <version>0.1.0</version>
-</dependency>
+  <artifactId>quarkus-lambda-parent</artifactId>
+  <version>0.2.0</version>
+  <relativePath/>
+</parent>
+
+<dependencies>
+  <!-- Sin <version>: la decide el parent. Una lambda SQS o programada usa quarkus-lambda-commons-core -->
+  <dependency>
+    <groupId>com.xdyan</groupId>
+    <artifactId>quarkus-lambda-commons-http</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.quarkus</groupId>
+    <artifactId>quarkus-hibernate-orm</artifactId>
+  </dependency>
+</dependencies>
+
+<build>
+  <plugins>
+    <!-- Configurados en el parent: basta con declararlos -->
+    <plugin>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-maven-plugin</artifactId>
+    </plugin>
+    <!-- Solo si la app tiene src/main/resources/openapi.yaml: genera <groupId>.api y <groupId>.api.model -->
+    <plugin>
+      <groupId>org.openapitools</groupId>
+      <artifactId>openapi-generator-maven-plugin</artifactId>
+    </plugin>
+  </plugins>
+</build>
 ```
+
+- **Para subir Quarkus o la librería** se cambia solo la versión del parent
+- El parent también configura el compilador (Java 25, Lombok y MapStruct), los tests (surefire con el LogManager de
+  Quarkus), el filtrado de `src/main/resources` (`${...}` de Maven) y `./mvnw package -Pnative`
+- Una dependencia que el parent no maneja se declara con su versión, como en cualquier pom
+- La app hereda del parent la licencia, la url y el scm de esta librería; no afecta a una lambda, que no se publica
 
 Lo que la app sigue escribiendo:
 
@@ -138,5 +174,5 @@ ni tag ni versión: se corrige y se vuelve a correr.
 Para revisar localmente lo que se publicaría (jars de sources y javadoc incluidos), sin firmar ni subir:
 
 ```bash
-./mvnw -Prelease -Dgpg.skip -DskipTests clean verify
+./mvnw -Ppublish-central -Dgpg.skip -DskipTests clean verify
 ```

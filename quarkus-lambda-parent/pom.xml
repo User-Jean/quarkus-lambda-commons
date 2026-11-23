@@ -1,0 +1,337 @@
+<?xml version="1.0"?>
+<!--
+  Parent of the Quarkus lambdas: one version decides Quarkus, the modules of quarkus-lambda-commons, the plugins and
+  the libraries every lambda uses, so they are always compatible. The app sets it as its <parent> and declares its
+  dependencies without <version>. It is also the parent of the library itself (pom.xml at the root).
+
+  Nothing here runs in every module: dependencies and the plugins that need configuration per app (quarkus, openapi
+  generator) are only managed. The app declares each one with its groupId and artifactId.
+-->
+<project child.project.url.inherit.append.path="false" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.xdyan</groupId>
+  <artifactId>quarkus-lambda-parent</artifactId>
+  <!-- Set from the git tags by maven-git-versioning-extension (.mvn/), don't edit it -->
+  <version>${revision}</version>
+  <packaging>pom</packaging>
+  <name>quarkus-lambda-parent</name>
+  <description>Parent of the Quarkus lambdas: the versions of Quarkus, quarkus-lambda-commons, the plugins and the
+    libraries they use</description>
+  <url>https://github.com/User-Jean/quarkus-lambda-commons</url>
+
+  <!-- Required by Maven Central, inherited by the modules as they are (without appending their artifactId to the
+       url and scm: child.*.inherit.append.path). An app inherits them too; it can declare its own -->
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>user-jean</id>
+      <name>xdyan</name>
+      <url>https://github.com/User-Jean</url>
+    </developer>
+  </developers>
+  <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false"
+       child.scm.url.inherit.append.path="false">
+    <connection>scm:git:https://github.com/User-Jean/quarkus-lambda-commons.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/User-Jean/quarkus-lambda-commons.git</developerConnection>
+    <url>https://github.com/User-Jean/quarkus-lambda-commons</url>
+  </scm>
+
+  <properties>
+    <revision>0.0.0-SNAPSHOT</revision>
+    <!-- The version of quarkus-lambda-commons: the one of this pom, written by the versioning extension
+         (.mvn/maven-git-versioning-extension.xml). ${project.version} would be the version of the app -->
+    <quarkus-lambda-commons.version>0.0.0-SNAPSHOT</quarkus-lambda-commons.version>
+
+    <maven.compiler.release>25</maven.compiler.release>
+    <maven.compiler.parameters>true</maven.compiler.parameters>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <!-- Quarkus: the BOM and the plugin always in the same version -->
+    <quarkus.platform.version>3.34.4</quarkus.platform.version>
+
+    <!-- Libraries the lambdas use outside the Quarkus BOM -->
+    <lombok.version>1.18.42</lombok.version>
+    <mapstruct.version>1.6.0</mapstruct.version>
+    <jackson-databind-nullable.version>0.2.8</jackson-databind-nullable.version>
+
+    <!-- Plugins -->
+    <compiler-plugin.version>3.14.1</compiler-plugin.version>
+    <surefire-plugin.version>3.5.4</surefire-plugin.version>
+    <openapi-generator-plugin.version>7.18.0</openapi-generator-plugin.version>
+    <jandex-plugin.version>3.2.4</jandex-plugin.version>
+    <source-plugin.version>3.3.1</source-plugin.version>
+    <javadoc-plugin.version>3.12.0</javadoc-plugin.version>
+    <gpg-plugin.version>3.2.8</gpg-plugin.version>
+    <central-publishing-plugin.version>0.12.0</central-publishing-plugin.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-bom</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.xdyan</groupId>
+        <artifactId>quarkus-lambda-commons-core</artifactId>
+        <version>${quarkus-lambda-commons.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.xdyan</groupId>
+        <artifactId>quarkus-lambda-commons-http</artifactId>
+        <version>${quarkus-lambda-commons.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${lombok.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mapstruct</groupId>
+        <artifactId>mapstruct</artifactId>
+        <version>${mapstruct.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openapitools</groupId>
+        <artifactId>jackson-databind-nullable</artifactId>
+        <version>${jackson-databind-nullable.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <!-- ${...} in src/main/resources (e.g. ${project.version} in application.yaml) is replaced by Maven -->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
+    <pluginManagement>
+      <plugins>
+        <!-- The app declares it (groupId and artifactId): the library modules are not Quarkus apps -->
+        <plugin>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-maven-plugin</artifactId>
+          <version>${quarkus.platform.version}</version>
+          <extensions>true</extensions>
+          <executions>
+            <execution>
+              <goals>
+                <goal>build</goal>
+                <goal>generate-code</goal>
+                <goal>generate-code-tests</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <!-- The app declares it (groupId and artifactId) when it has src/main/resources/openapi.yaml: generates the
+             JAX-RS interfaces (<groupId>.api) and the DTOs (<groupId>.api.model) into target/ -->
+        <plugin>
+          <groupId>org.openapitools</groupId>
+          <artifactId>openapi-generator-maven-plugin</artifactId>
+          <version>${openapi-generator-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>generate-server</id>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>generate</goal>
+              </goals>
+              <configuration>
+                <inputSpec>${project.basedir}/src/main/resources/openapi.yaml</inputSpec>
+                <generatorName>jaxrs-spec</generatorName>
+                <apiNameSuffix>Resource</apiNameSuffix>
+                <configOptions>
+                  <apiPackage>${project.groupId}.api</apiPackage>
+                  <modelPackage>${project.groupId}.api.model</modelPackage>
+                  <sourceFolder>src/main/java</sourceFolder>
+                  <dateLibrary>java8</dateLibrary>
+                  <interfaceOnly>true</interfaceOnly>
+                  <library>quarkus</library>
+                  <useJakartaEe>true</useJakartaEe>
+                  <returnResponse>true</returnResponse>
+                  <useTags>true</useTags>
+                  <useSwaggerAnnotations>false</useSwaggerAnnotations>
+                  <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                  <!-- A list not sent is null, like any other optional field, not an empty list -->
+                  <containerDefaultToNull>true</containerDefaultToNull>
+                  <additionalModelTypeAnnotations>
+                    @io.quarkus.runtime.annotations.RegisterForReflection
+                  </additionalModelTypeAnnotations>
+                  <!-- The enums too: without it the native image doesn't see @JsonValue and writes name() (UP instead
+                       of up); the JVM tests don't catch it -->
+                  <additionalEnumTypeAnnotations>
+                    @io.quarkus.runtime.annotations.RegisterForReflection
+                  </additionalEnumTypeAnnotations>
+                </configOptions>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${surefire-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>io.smallrye</groupId>
+          <artifactId>jandex-maven-plugin</artifactId>
+          <version>${jandex-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <!-- Lombok and MapStruct: a processor without its dependency in the module does nothing -->
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+            <path>
+              <groupId>org.mapstruct</groupId>
+              <artifactId>mapstruct-processor</artifactId>
+              <version>${mapstruct.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+        <configuration>
+          <systemPropertyVariables>
+            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+            <maven.home>${maven.home}</maven.home>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- ./mvnw package -Pnative: the native binary of the lambda (and its tests with failsafe, if it has any) -->
+    <profile>
+      <id>native</id>
+      <activation>
+        <property>
+          <name>native</name>
+        </property>
+      </activation>
+      <properties>
+        <quarkus.native.enabled>true</quarkus.native.enabled>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+                <configuration>
+                  <systemPropertyVariables>
+                    <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+                    <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                    <maven.home>${maven.home}</maven.home>
+                  </systemPropertyVariables>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Publishing of quarkus-lambda-commons to Maven Central (workflow "Release"): sources, javadoc, GPG signatures
+         and the upload to the Central Portal. Needs the server "central" in settings.xml (user token) and the GPG key.
+         Here and not in the root pom so this pom is published too. Not for the apps -->
+    <profile>
+      <id>publish-central</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>${source-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>${javadoc-plugin.version}</version>
+            <configuration>
+              <!-- Not every public method has javadoc: a missing comment is not an error -->
+              <doclint>none</doclint>
+            </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>${gpg-plugin.version}</version>
+            <configuration>
+              <!-- The passphrase comes from the env var MAVEN_GPG_PASSPHRASE, without a terminal -->
+              <bestPractices>true</bestPractices>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- Uploads all the modules as one deployment and publishes it once validated. A version published to
+               Maven Central can never be changed nor deleted -->
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>${central-publishing-plugin.version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+              <autoPublish>true</autoPublish>
+              <waitUntil>published</waitUntil>
+              <deploymentName>quarkus-lambda-commons ${project.version}</deploymentName>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>
