@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+  What google-java-format (Spotless) doesn't decide: the format (indentation, line length, import order, unused
+  imports) is the formatter's, not checked here. A rule is skipped in one place with
+  @SuppressWarnings("checkstyle:<rule in lowercase>"), e.g. @SuppressWarnings("checkstyle:membername").
+-->
+<module name="Checker">
+  <property name="charset" value="UTF-8"/>
+  <property name="severity" value="error"/>
+  <property name="fileExtensions" value="java"/>
+
+  <module name="SuppressWarningsFilter"/>
+
+  <module name="TreeWalker">
+    <module name="SuppressWarningsHolder"/>
+
+    <!-- Imports: each one explicit, also the static ones (import static ...Matchers.equalTo, not .*), nothing
+         internal of the JDK -->
+    <module name="AvoidStarImport"/>
+    <module name="RedundantImport"/>
+    <module name="IllegalImport"/>
+
+    <!-- Files and declarations -->
+    <module name="OuterTypeFilename"/>
+    <module name="OneTopLevelClass"/>
+    <module name="MultipleVariableDeclarations"/>
+    <module name="OneStatementPerLine"/>
+    <module name="ModifierOrder"/>
+    <module name="ArrayTypeStyle"/>
+    <module name="UpperEll"/>
+
+    <!-- Every if, else, for, do and while with braces: the formatter doesn't add them -->
+    <module name="NeedBraces"/>
+
+    <!-- Names -->
+    <module name="PackageName">
+      <property name="format" value="^[a-z]+(\.[a-z_][a-z0-9_]*)*$"/>
+    </module>
+    <module name="TypeName"/>
+    <module name="MethodName"/>
+    <module name="MemberName"/>
+    <module name="ParameterName"/>
+    <module name="LambdaParameterName"/>
+    <module name="LocalVariableName"/>
+    <module name="PatternVariableName"/>
+    <module name="RecordComponentName"/>
+    <module name="StaticVariableName"/>
+    <module name="ConstantName"/>
+    <module name="ClassTypeParameterName">
+      <property name="format" value="^[A-Z][0-9]?$"/>
+    </module>
+    <module name="MethodTypeParameterName">
+      <property name="format" value="^[A-Z][0-9]?$"/>
+    </module>
+
+    <!-- Bugs that the compiler doesn't catch -->
+    <module name="EqualsHashCode"/>
+    <module name="FallThrough"/>
+    <module name="StringLiteralEquality"/>
+    <module name="MissingSwitchDefault"/>
+
+    <!-- Comments: a public interface says what it is for in its javadoc. A // comment explains why, never what
+         the code already says (reviewed by people, not checked here) -->
+    <module name="MissingJavadocType">
+      <property name="scope" value="public"/>
+      <property name="tokens" value="INTERFACE_DEF"/>
+    </module>
+    <!-- Commented-out code is deleted: it is in git -->
+    <module name="RegexpSinglelineJava">
+      <property name="id" value="commentedOutCode"/>
+      <property name="format" value="^\s*//.*[;{}]\s*$"/>
+      <property name="message" value="Commented-out code: delete it, it is in git"/>
+    </module>
+  </module>
+</module>
