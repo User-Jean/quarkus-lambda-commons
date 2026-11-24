@@ -1,7 +1,7 @@
 name: Lambda PR validation
 
-# Reusable workflow for the pull requests of a lambda built with quarkus-lambda-parent: version guard, JVM tests
-# (no native build) and the deploy manifests. No AWS: the OIDC role only trusts develop and main.
+# Reusable workflow for the pull requests of a lambda built with quarkus-lambda-parent: version guard, JVM tests and
+# the rules of the code (verify: format, Checkstyle, PMD; no native build) and the deploy manifests. No AWS: the OIDC role only trusts develop and main.
 #
 # The lambda calls it from .github/workflows/pr-validation.yaml, with the same version as its parent:
 #
@@ -30,7 +30,7 @@ env:
 
 jobs:
   test:
-    name: Version & tests
+    name: Version, tests & rules
     runs-on: ubuntu-24.04
     steps:
       # Full history and tags: the version extension needs them
@@ -65,8 +65,9 @@ jobs:
           cache: maven
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run tests
-        run: mvn -B clean test
+      # verify: the tests and the rules of the code of the parent (format, Checkstyle, PMD)
+      - name: Tests & rules of the code
+        run: mvn -B clean verify
 
   manifest:
     name: Deploy manifests

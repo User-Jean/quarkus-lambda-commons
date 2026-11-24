@@ -154,7 +154,7 @@ con la versión de la librería y no haya que copiarlo en cada repo:
 
 | Workflow | Hace |
 |---|---|
-| `lambda-pr-validation.yaml` | Que el PR no cambie la versión, los tests JVM y los manifests de `deploy/` (sin AWS) |
+| `lambda-pr-validation.yaml` | Que el PR no cambie la versión, los tests JVM, las reglas del código (`verify`) y los manifests de `deploy/` (sin AWS) |
 | `lambda-deploy-test.yaml` | Siguiente versión → tests → tag → build nativo → zip a S3 → pre-release → manifest y código en `<nombre>-test` |
 | `lambda-release-production.yaml` | La última pre-release que corre en `-test` → mueve `main` → el mismo zip en `<nombre>-prod` → release |
 
