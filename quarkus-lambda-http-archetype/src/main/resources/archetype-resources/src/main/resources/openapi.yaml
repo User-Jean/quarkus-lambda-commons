@@ -1,0 +1,214 @@
+openapi: 3.0.1
+info:
+  title: Quarkus Lambda HTTP Template
+  description: Example HTTP API of the archetype. Replace the Item resource with the ones of your service.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local server
+tags:
+  - name: Health
+    description: Liveness check of the lambda and the database.
+  - name: Item
+    description: Example resource of the archetype.
+paths:
+  /hello:
+    get:
+      tags:
+        - Health
+      description: Checks that the lambda is up and can reach the database
+      operationId: hello
+      responses:
+        '200':
+          description: The lambda and the database are up
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+        '503':
+          description: The lambda is up but the database doesn't respond
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+
+  /item:
+    get:
+      tags:
+        - Item
+      description: Lists all the items ordered by name
+      operationId: listItems
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+    post:
+      tags:
+        - Item
+      description: Creates an item
+      operationId: createItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemCreateRequest'
+      responses:
+        '201':
+          description: The created item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /item/{id}:
+    get:
+      tags:
+        - Item
+      description: Returns one item
+      operationId: getItem
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: The item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        example: 10
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    Conflict:
+      description: The request clashes with the current state (e.g. an item with that name already exists)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+
+  schemas:
+    ErrorMessage:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "quarkus-lambda-http-template"
+        message:
+          type: string
+          example: "Resource not found"
+        code:
+          type: integer
+          example: 404
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+              component:
+                type: string
+
+    HelloResponse:
+      type: object
+      required:
+        - message
+        - database
+      properties:
+        message:
+          type: string
+          example: "Hello"
+        database:
+          type: string
+          enum: [ UP, DOWN ]
+          example: "UP"
+
+    # A field used by several requests is a component, so its pattern is defined once
+    ItemName:
+      type: string
+      description: Letters, numbers, spaces and ' ( ) . -, so it can't carry HTML
+      minLength: 1
+      maxLength: 100
+      pattern: "^[\\p{L}0-9 '().-]+$"
+      example: "Teclado mecánico"
+    ItemDescription:
+      type: string
+      minLength: 1
+      maxLength: 500
+      pattern: "^[^<>]*$"
+      example: "Switches marrones, distribución en español"
+    Money:
+      type: number
+      description: Amount with at most 2 decimals
+      minimum: 0
+      example: 149.90
+
+    ItemCreateRequest:
+      type: object
+      required:
+        - name
+        - unit_price
+      properties:
+        name:
+          $ref: '#/components/schemas/ItemName'
+        description:
+          $ref: '#/components/schemas/ItemDescription'
+        unit_price:
+          $ref: '#/components/schemas/Money'
+
+    Item:
+      type: object
+      required:
+        - id
+        - name
+        - unit_price
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        name:
+          $ref: '#/components/schemas/ItemName'
+        description:
+          type: string
+          example: "Switches marrones, distribución en español"
+        unit_price:
+          $ref: '#/components/schemas/Money'
+        created_at:
+          type: string
+          description: Date time as dd/MM/yyyy HH:mm
+          example: "15/12/2025 12:00"

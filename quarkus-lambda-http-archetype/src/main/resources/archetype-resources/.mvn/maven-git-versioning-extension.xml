@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The version comes from the git tags vX.Y.Z, never from pom.xml:
+  - commit with a tag vX.Y.Z          → X.Y.Z
+  - commits after the last tag vX.Y.Z → X.Y.Z-<commits since the tag>-g<sha>-SNAPSHOT
+  - no tags                           → 0.0.0-SNAPSHOT
+-->
+<configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="https://github.com/qoomon/maven-git-versioning-extension https://qoomon.github.io/maven-git-versioning-extension/configuration-9.4.0.xsd">
+
+  <describeTagPattern><![CDATA[v\d+\.\d+\.\d+]]></describeTagPattern>
+
+  <!-- A tag also counts when the commit is checked out as a branch (develop at the tagged commit) -->
+  <refs considerTagsOnBranches="true">
+    <ref type="tag">
+      <pattern><![CDATA[v(?<version>\d+\.\d+\.\d+)]]></pattern>
+      <version>${ref.version}</version>
+    </ref>
+    <ref type="branch">
+      <pattern>.+</pattern>
+      <version>${describe.tag.version}-${describe.distance}-g${commit.short}-SNAPSHOT</version>
+    </ref>
+  </refs>
+
+  <!-- Detached HEAD without a tag (e.g. git checkout <sha>) -->
+  <rev>
+    <version>${describe.tag.version}-${describe.distance}-g${commit.short}-SNAPSHOT</version>
+  </rev>
+</configuration>

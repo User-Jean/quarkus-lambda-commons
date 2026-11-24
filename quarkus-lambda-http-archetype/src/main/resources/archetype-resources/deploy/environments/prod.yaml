@@ -1,0 +1,4 @@
+spec:
+  env:
+    DB_HOST: "CHANGE_ME"
+    DB_DATABASE: app

@@ -1,0 +1,14 @@
+name: Pull Request Validation
+
+# Version guard, JVM tests (no native build) and deploy manifests, in quarkus-lambda-commons with the same version as
+# the parent of pom.xml: https://github.com/User-Jean/quarkus-lambda-commons#workflows-de-las-lambdas
+on:
+  pull_request:
+    branches: [ develop, main ]
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  validate:
+    uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-pr-validation.yaml@vQUARKUS_LAMBDA_COMMONS_VERSION
+    permissions:
+      contents: read

@@ -8,6 +8,7 @@ pom.xml                         quarkus-lambda-commons-parent: build of the libr
 ├── quarkus-lambda-dependencies/  versions, metadata and publishing: parent of pom.xml and of quarkus-lambda-parent
 ├── quarkus-lambda-code-rules/    the Checkstyle and PMD configuration (child of quarkus-lambda-dependencies)
 ├── quarkus-lambda-parent/        parent of the apps: + the dependencies every lambda uses and the build
+├── quarkus-lambda-http-archetype/ the project of a new HTTP lambda (mvn archetype:generate)
 ├── commons-core/             quarkus-lambda-commons-core
 └── commons-http/             quarkus-lambda-commons-http
 
@@ -66,6 +67,11 @@ com.xdyan.commons
   what the code already says: if the code needs one to be understood, rename or split it first. Commented-out code is
   deleted, it is in git (Checkstyle). The same holds for the lambdas: `quarkus-lambda-code-rules` checks the first and
   the last
+- `quarkus-lambda-http-archetype`: `archetype-resources/` is a real project (`com.example`, `quarkus-lambda-http-template`,
+  `/api/v1`), copied without Velocity; `archetype-post-generate.groovy` replaces those names, the token
+  `QUARKUS_LAMBDA_COMMONS_VERSION` (parent and workflows) and renames `__gitignore__`. Its test generates a project and
+  runs `verify`, so the generated code must follow the rules of the code. A change to the parent, `commons-http` or the
+  workflows that a lambda would need is made in `archetype-resources/` too
 - Nothing of a client or a domain: this repository is meant to be public
 - The `lambda-*.yaml` workflows are called by the lambdas with the tag of their parent: they check out their scripts
   with `job.workflow_repository` and `job.workflow_sha` into `.lambda-commons/` (after the checkout of the lambda, whose

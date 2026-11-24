@@ -1,0 +1,24 @@
+# Opens a pull request when a dependency or an action has a new version; the PR validation runs its tests.
+# Merging one deploys nothing: the next "Deploy to test" does.
+# Quarkus, the libraries and the plugins come from the parent (quarkus-lambda-parent): its PR upgrades all of them.
+# The workflows of quarkus-lambda-commons come in the github-actions PR: merge it with the one of the parent.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns:
+          - "*"
