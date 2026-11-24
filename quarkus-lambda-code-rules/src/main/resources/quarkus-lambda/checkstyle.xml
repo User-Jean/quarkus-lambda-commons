@@ -60,5 +60,18 @@
     <module name="FallThrough"/>
     <module name="StringLiteralEquality"/>
     <module name="MissingSwitchDefault"/>
+
+    <!-- Comments: a public interface says what it is for in its javadoc. A // comment explains why, never what
+         the code already says (reviewed by people, not checked here) -->
+    <module name="MissingJavadocType">
+      <property name="scope" value="public"/>
+      <property name="tokens" value="INTERFACE_DEF"/>
+    </module>
+    <!-- Commented-out code is deleted: it is in git -->
+    <module name="RegexpSinglelineJava">
+      <property name="id" value="commentedOutCode"/>
+      <property name="format" value="^\s*//.*[;{}]\s*$"/>
+      <property name="message" value="Commented-out code: delete it, it is in git"/>
+    </module>
   </module>
 </module>

@@ -51,6 +51,10 @@ com.xdyan.commons
   `MdcContributor` of the app can't replace them. Renaming one breaks the log queries of the apps: say it in the release
 - Error messages never show internal details: a 5xx never returns the message of the exception, and the 404 of RESTEasy
   itself (`RESTEASY...`, no endpoint or a path parameter that can't be converted) returns "Resource not found"
+- Comments: a public interface has a javadoc that says what it is for (Checkstyle). A `//` comment explains why, never
+  what the code already says: if the code needs one to be understood, rename or split it first. Commented-out code is
+  deleted, it is in git (Checkstyle). The same holds for the lambdas: `quarkus-lambda-code-rules` checks the first and
+  the last
 - Nothing of a client or a domain: this repository is meant to be public
 - Every public class has a test that starts Quarkus (`@QuarkusTest` in the module, which acts as the app). The test
   config is `application.properties`: the modules don't have `quarkus-config-yaml`
