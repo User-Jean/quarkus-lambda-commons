@@ -1,11 +1,14 @@
 package com.xdyan.commons.http;
 
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
+
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
 
 @QuarkusTest
 public class NullFieldsTest {
@@ -13,7 +16,10 @@ public class NullFieldsTest {
   @Test
   @DisplayName("don't write a null field in the response, but keep an empty list")
   public void nullFieldNotWritten() {
-    given().when().get("/test/fields").then()
+    given()
+        .when()
+        .get("/test/fields")
+        .then()
         .statusCode(200)
         .body("name", equalTo("x"))
         .body("$", not(hasKey("note")))

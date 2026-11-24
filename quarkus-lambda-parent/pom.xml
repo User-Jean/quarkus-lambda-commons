@@ -100,6 +100,20 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
       </plugin>
+      <!-- Rules of the code, configured in quarkus-lambda-dependencies (quarkus-lambda-code-rules): Checkstyle
+           (validate) and PMD (process-classes) in every ./mvnw test, the format (google-java-format,
+           ./mvnw spotless:apply fixes it) in verify. A violation fails the build. An app skips one in one place with @SuppressWarnings("checkstyle:<rule>") or
+           @SuppressWarnings("PMD.<Rule>"), or a whole plugin with spotless.check.skip, checkstyle.skip or pmd.skip -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-pmd-plugin</artifactId>
+      </plugin>
     </plugins>
   </build>
 

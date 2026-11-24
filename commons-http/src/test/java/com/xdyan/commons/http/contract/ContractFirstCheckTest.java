@@ -1,12 +1,13 @@
 package com.xdyan.commons.http.contract;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * The module starts in its own tests because src/test/resources has an openapi.yaml, like an app.
@@ -18,9 +19,13 @@ public class ContractFirstCheckTest {
   @Test
   @DisplayName("fail without openapi.yaml, saying how to fix it")
   public void failWithoutContract() {
-    var error = assertThrows(IllegalStateException.class, () -> ContractFirstCheck.check(WITHOUT_CONTRACT, true));
+    var error =
+        assertThrows(
+            IllegalStateException.class, () -> ContractFirstCheck.check(WITHOUT_CONTRACT, true));
     assertTrue(error.getMessage().contains("src/main/resources/openapi.yaml"), error.getMessage());
-    assertTrue(error.getMessage().contains("xdyan.commons.http.openapi.required=false"), error.getMessage());
+    assertTrue(
+        error.getMessage().contains("xdyan.commons.http.openapi.required=false"),
+        error.getMessage());
   }
 
   @Test

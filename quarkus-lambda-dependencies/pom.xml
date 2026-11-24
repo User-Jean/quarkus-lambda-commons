@@ -68,6 +68,14 @@
     <javadoc-plugin.version>3.12.0</javadoc-plugin.version>
     <gpg-plugin.version>3.2.8</gpg-plugin.version>
     <central-publishing-plugin.version>0.12.0</central-publishing-plugin.version>
+
+    <!-- Rules of the code (quarkus-lambda-code-rules): format, Checkstyle and PMD -->
+    <spotless-plugin.version>3.12.0</spotless-plugin.version>
+    <google-java-format.version>2.0.0</google-java-format.version>
+    <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
+    <checkstyle.version>14.4.0</checkstyle.version>
+    <pmd-plugin.version>3.28.0</pmd-plugin.version>
+    <pmd.version>7.29.0</pmd.version>
   </properties>
 
   <dependencyManagement>
@@ -148,6 +156,116 @@
           <groupId>io.smallrye</groupId>
           <artifactId>jandex-maven-plugin</artifactId>
           <version>${jandex-plugin.version}</version>
+        </plugin>
+
+        <!-- Rules of the code: Checkstyle in validate (before compiling), PMD in process-classes (it needs the
+             classes), so ./mvnw test already runs both; the format in verify, so a space doesn't stop the tests while
+             developing. Only src/main/java and src/test/java: the code generated from the openapi.yaml (target/) is
+             not checked -->
+        <!-- Format: google-java-format, not configurable. ./mvnw spotless:apply formats the code -->
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>${spotless-plugin.version}</version>
+          <configuration>
+            <java>
+              <googleJavaFormat>
+                <version>${google-java-format.version}</version>
+                <style>GOOGLE</style>
+              </googleJavaFormat>
+              <removeUnusedImports/>
+            </java>
+          </configuration>
+          <executions>
+            <execution>
+              <id>check-format</id>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <!-- Names, imports and braces: quarkus-lambda/checkstyle.xml of quarkus-lambda-code-rules -->
+        <plugin>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${checkstyle-plugin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${checkstyle.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>com.xdyan</groupId>
+              <artifactId>quarkus-lambda-code-rules</artifactId>
+              <version>${quarkus-lambda-commons.version}</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <configLocation>quarkus-lambda/checkstyle.xml</configLocation>
+            <sourceDirectories>
+              <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+            </sourceDirectories>
+            <testSourceDirectories>
+              <testSourceDirectory>${project.build.testSourceDirectory}</testSourceDirectory>
+            </testSourceDirectories>
+            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+            <consoleOutput>true</consoleOutput>
+            <violationSeverity>warning</violationSeverity>
+          </configuration>
+          <executions>
+            <execution>
+              <id>check-style</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <!-- Bugs and bad practices: quarkus-lambda/pmd-ruleset.xml of quarkus-lambda-code-rules -->
+        <plugin>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <version>${pmd-plugin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>net.sourceforge.pmd</groupId>
+              <artifactId>pmd-core</artifactId>
+              <version>${pmd.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>net.sourceforge.pmd</groupId>
+              <artifactId>pmd-java</artifactId>
+              <version>${pmd.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>com.xdyan</groupId>
+              <artifactId>quarkus-lambda-code-rules</artifactId>
+              <version>${quarkus-lambda-commons.version}</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <rulesets>
+              <ruleset>quarkus-lambda/pmd-ruleset.xml</ruleset>
+            </rulesets>
+            <targetJdk>${maven.compiler.release}</targetJdk>
+            <includeTests>true</includeTests>
+            <excludeRoots>
+              <excludeRoot>${project.build.directory}/generated-sources</excludeRoot>
+              <excludeRoot>${project.build.directory}/generated-test-sources</excludeRoot>
+            </excludeRoots>
+            <printFailingErrors>true</printFailingErrors>
+            <linkXRef>false</linkXRef>
+          </configuration>
+          <executions>
+            <execution>
+              <id>check-pmd</id>
+              <phase>process-classes</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>

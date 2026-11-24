@@ -1,15 +1,19 @@
 package com.xdyan.commons.http;
 
+import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.quarkus.test.junit.QuarkusTest;
 import org.jboss.logmanager.ExtLogRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
- * The MDC of every log line of a request: the fields of the library and the ones of the app (TestMdcContributor).
+ * The MDC of every log line of a request: the fields of the library and the ones of the app
+ * (TestMdcContributor).
  */
 @QuarkusTest
 public class MdcTest {
@@ -25,11 +29,15 @@ public class MdcTest {
   @DisplayName("put the fields of the library in snake_case, without X-Amzn-Trace-Id")
   public void fieldsOfTheLibrary() {
     try (var capture = LogCapture.start()) {
-      given().header("x-agw-request-id", "Yx2hTgxyIAMEbXw=")
+      given()
+          .header("x-agw-request-id", "Yx2hTgxyIAMEbXw=")
           .header("X-Amzn-Trace-Id", "Root=1-6af171c1-4e05ad585ad8350922ad93f4")
           .header("X-Client-Name", "web-admin")
           .header("X-Client-Version", "1.2.0")
-          .when().get("/test/number/1").then().statusCode(200);
+          .when()
+          .get("/test/number/1")
+          .then()
+          .statusCode(200);
 
       ExtLogRecord log = requestLog(capture);
       assertEquals("Yx2hTgxyIAMEbXw=", log.getMdc("request_id"));
@@ -44,13 +52,15 @@ public class MdcTest {
   }
 
   @Test
-  @DisplayName("put the fields of an MdcContributor in every log line of the request and clear them after it")
+  @DisplayName(
+      "put the fields of an MdcContributor in every log line of the request and clear them after it")
   public void fieldsOfTheApp() {
     try (var capture = LogCapture.start()) {
       given().header("X-Tenant-Id", "acme").when().get("/test/not-found").then().statusCode(404);
 
       assertFalse(capture.records.isEmpty());
-      capture.records.forEach(r -> assertEquals("acme", r.getMdc("tenant_id"), r.getFormattedMessage()));
+      capture.records.forEach(
+          r -> assertEquals("acme", r.getMdc("tenant_id"), r.getFormattedMessage()));
       assertNull(org.slf4j.MDC.get("tenant_id"));
     }
   }
@@ -72,7 +82,8 @@ public class MdcTest {
       given().header("X-Replace-Path", "yes").when().get("/test/number/1").then().statusCode(200);
 
       assertTrue(requestLog(capture).getMdc("path").endsWith("/test/number/1"));
-      assertTrue(capture.messages().stream().anyMatch(m -> m.startsWith("WARN MDC field 'path'")),
+      assertTrue(
+          capture.messages().stream().anyMatch(m -> m.startsWith("WARN MDC field 'path'")),
           capture.messages().toString());
     }
   }
@@ -83,8 +94,12 @@ public class MdcTest {
     try (var capture = LogCapture.start()) {
       given().header("X-Fail", "yes").when().get("/test/number/1").then().statusCode(200);
 
-      assertTrue(capture.records.stream().anyMatch(r -> r.getFormattedMessage().startsWith("MDC fields of")
-          && r.getThrown() instanceof IllegalStateException), capture.messages().toString());
+      assertTrue(
+          capture.records.stream()
+              .anyMatch(r ->
+                  r.getFormattedMessage().startsWith("MDC fields of")
+                      && r.getThrown() instanceof IllegalStateException),
+          capture.messages().toString());
     }
   }
 
