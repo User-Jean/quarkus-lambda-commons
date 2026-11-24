@@ -3,6 +3,8 @@
   Bugs and bad practices of the code of the lambdas. Chosen rule by rule, not whole categories: a rule that fails
   where the code is right (e.g. a REST Assured test "without asserts") teaches to ignore PMD. A rule is skipped in one
   place with @SuppressWarnings("PMD.<Rule>"), e.g. @SuppressWarnings("PMD.AvoidCatchingGenericException").
+  What checkstyle.xml already checks is not repeated here (equals with hashCode, switch fall through, == on strings):
+  Checkstyle runs first, before compiling.
 -->
 <ruleset name="quarkus-lambda"
          xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
@@ -45,12 +47,10 @@
   <rule ref="category/java/bestpractices.xml/PrimitiveWrapperInstantiation"/>
   <rule ref="category/java/bestpractices.xml/ForLoopCanBeForeach"/>
   <rule ref="category/java/errorprone.xml/CompareObjectsWithEquals"/>
-  <rule ref="category/java/errorprone.xml/UseEqualsToCompareStrings"/>
   <rule ref="category/java/errorprone.xml/EqualsNull"/>
   <rule ref="category/java/errorprone.xml/BrokenNullCheck"/>
   <rule ref="category/java/errorprone.xml/MisplacedNullCheck"/>
   <rule ref="category/java/errorprone.xml/UnnecessaryBooleanAssertion"/>
-  <rule ref="category/java/errorprone.xml/ImplicitSwitchFallThrough"/>
   <rule ref="category/java/errorprone.xml/AssignmentInOperand"/>
   <rule ref="category/java/errorprone.xml/AvoidBranchingStatementAsLastInLoop"/>
   <rule ref="category/java/errorprone.xml/AvoidDecimalLiteralsInBigDecimalConstructor"/>
@@ -59,7 +59,6 @@
   <rule ref="category/java/errorprone.xml/ConstructorCallsOverridableMethod"/>
   <rule ref="category/java/errorprone.xml/IdempotentOperations"/>
   <rule ref="category/java/errorprone.xml/JumbledIncrementer"/>
-  <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode"/>
   <rule ref="category/java/errorprone.xml/SingleMethodSingleton"/>
   <rule ref="category/java/errorprone.xml/SingletonClassReturningNewInstance"/>
   <rule ref="category/java/errorprone.xml/UnusedReturnValue"/>
