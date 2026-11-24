@@ -20,7 +20,7 @@ Quarkus con la que se probaron, así que una app nunca mezcla versiones incompat
 <parent>
   <groupId>com.xdyan</groupId>
   <artifactId>quarkus-lambda-parent</artifactId>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <relativePath/>
 </parent>
 
@@ -146,6 +146,45 @@ quarkus:
   jackson:
     serialization-inclusion: always
 ```
+
+## Workflows de las lambdas
+
+El CI/CD de una lambda también vive aquí, como *reusable workflows*, para que un arreglo llegue a todas las lambdas
+con la versión de la librería y no haya que copiarlo en cada repo:
+
+| Workflow | Hace |
+|---|---|
+| `lambda-pr-validation.yaml` | Que el PR no cambie la versión, los tests JVM y los manifests de `deploy/` (sin AWS) |
+| `lambda-deploy-test.yaml` | Siguiente versión → tests → tag → build nativo → zip a S3 → pre-release → manifest y código en `<nombre>-test` |
+| `lambda-release-production.yaml` | La última pre-release que corre en `-test` → mueve `main` → el mismo zip en `<nombre>-prod` → release |
+
+La lambda tiene tres workflows de pocas líneas que los llaman **con la misma versión que su parent** (el ejemplo
+completo está al inicio de cada workflow):
+
+```yaml
+jobs:
+  deploy:
+    uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-deploy-test.yaml@v0.4.0
+    permissions:
+      contents: write
+      id-token: write
+    with:
+      bump: ${{ inputs.bump }}
+      description: ${{ inputs.description }}
+      aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+      artifacts-bucket: ${{ vars.LAMBDA_ARTIFACTS_BUCKET }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+```
+
+- El nombre de la lambda es `metadata.name` de `deploy/base.yaml`: las funciones son `<nombre>-test` y `<nombre>-prod`,
+  y los zips van a `s3://<bucket>/<nombre>/<nombre>-X.Y.Z.zip`
+- Los scripts (`.github/lambda/`: `apply-manifest.sh`, `deploy-code.sh`, `check-version-unchanged.sh` y el schema del
+  manifest; `.github/scripts/`: `next-version.sh` y `release-notes.sh`) se descargan en el mismo commit del workflow
+  (`job.workflow_sha`): una lambda en `v0.4.0` corre los scripts de `v0.4.0`
+- Dependabot de la lambda (`github-actions`) abre el PR cuando sale una versión nueva, igual que el del parent (`maven`):
+  conviene subir los dos juntos
+- Para probar un cambio antes del release, la lambda apunta a la rama (`@mi-rama`) en un PR
 
 ## Para reemplazar algo
 

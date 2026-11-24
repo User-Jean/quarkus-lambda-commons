@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/User-Jean/quarkus-lambda-commons/.github/lambda/lambda-function.schema.json",
+  "title": "LambdaFunction manifest",
+  "description": "Configuration of the lambda that apply-manifest.sh sets before deploying the code. Validated after merging deploy/base.yaml with deploy/environments/<env>.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "deploy/v1" },
+    "kind": { "const": "LambdaFunction" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "description": "Function name without the environment suffix (-test, -prod)",
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["memorySize", "timeout"],
+      "properties": {
+        "memorySize": { "type": "integer", "minimum": 128, "maximum": 10240 },
+        "timeout": { "type": "integer", "minimum": 1, "maximum": 900 },
+        "description": { "type": "string", "maxLength": 256 },
+        "env": {
+          "description": "Plain environment variables",
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "secrets": {
+          "description": "Environment variables resolved from SSM Parameter Store at deploy time",
+          "type": "object",
+          "additionalProperties": { "type": "string", "pattern": "^ssm:/" }
+        }
+      }
+    }
+  }
+}

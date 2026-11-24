@@ -1,0 +1,276 @@
+name: Lambda deploy to test
+
+# Reusable workflow: creates the next version vX.Y.Z of a lambda from develop and deploys it to <name>-test (<name>
+# is metadata.name of deploy/base.yaml).
+#
+# Job "release" (tag + zip): the tag is created locally before the native build, so the version extension produces
+# X.Y.Z, and it is pushed only after the build. If the upload to S3 fails the tag is deleted, so there is never a tag
+# without its zip blocking that version.
+# Job "deploy": if it fails (e.g. the functions don't exist yet), fix the cause and use "Re-run failed jobs": it
+# deploys the same version again, it doesn't create a new one.
+#
+# The lambda calls it from .github/workflows/deploy-test.yaml, with the same version as its parent:
+#
+#   on:
+#     workflow_dispatch:
+#       inputs:
+#         bump: { description: 'Version bump from the last tag v*', type: choice, options: [patch, minor, major] }
+#         description: { description: 'What this version changes', required: true, type: string }
+#   concurrency:
+#     group: deploy-test
+#   jobs:
+#     deploy:
+#       uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-deploy-test.yaml@vX.Y.Z
+#       permissions:
+#         contents: write
+#         id-token: write
+#       with:
+#         bump: ${{ inputs.bump }}
+#         description: ${{ inputs.description }}
+#         aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+#         artifacts-bucket: ${{ vars.LAMBDA_ARTIFACTS_BUCKET }}
+#       secrets:
+#         AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+on:
+  workflow_call:
+    inputs:
+      bump:
+        description: 'Version bump from the last tag v*: patch, minor or major'
+        type: string
+        required: true
+      description:
+        description: 'What this version changes (tag message, release notes and Lambda version description)'
+        type: string
+        required: true
+      aws-region:
+        description: 'Region of the lambda and the bucket'
+        type: string
+        default: 'us-east-1'
+      artifacts-bucket:
+        description: 'S3 bucket of the zips, usually the repository variable LAMBDA_ARTIFACTS_BUCKET'
+        type: string
+        required: true
+      java-version:
+        description: 'Java version of GraalVM'
+        type: string
+        default: '25'
+    secrets:
+      AWS_ROLE_ARN:
+        description: 'Role of GitHub Actions, assumed by OIDC. It only trusts develop and main'
+        required: true
+    outputs:
+      version:
+        description: 'The version deployed, X.Y.Z'
+        value: ${{ jobs.release.outputs.version }}
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  ENVIRONMENT: test
+  AWS_REGION: ${{ inputs.aws-region }}
+  S3_BUCKET: ${{ inputs.artifacts-bucket }}
+  # The scripts of quarkus-lambda-commons, checked out at the commit of this workflow
+  COMMONS: .lambda-commons/.github
+
+jobs:
+  release:
+    name: Tag & build
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+      tag: ${{ steps.next.outputs.tag }}
+      name: ${{ steps.next.outputs.name }}
+      zip_name: ${{ steps.next.outputs.zip_name }}
+    steps:
+      # The OIDC role only trusts develop and main
+      - name: Check the branch
+        if: github.ref != 'refs/heads/develop'
+        run: |
+          echo "::error::Run it from develop (was ${{ github.ref_name }})."
+          exit 1
+
+      - name: Check the inputs
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          if [[ $BUMP != patch && $BUMP != minor && $BUMP != major ]]; then
+            echo "::error::bump must be patch, minor or major (was '$BUMP')."
+            exit 1
+          fi
+          if [[ -z $S3_BUCKET ]]; then
+            echo "::error::Set the repository variable LAMBDA_ARTIFACTS_BUCKET (Settings → Secrets and variables → Actions → Variables)."
+            exit 1
+          fi
+
+      # Full history and tags: the version extension and next-version.sh need them
+      - name: Checkout develop
+        uses: actions/checkout@v7
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      # The same commit as this workflow (job.workflow_sha), so a lambda on vX.Y.Z runs the scripts of vX.Y.Z.
+      # After the checkout of the lambda: its clean would delete them
+      - name: Checkout quarkus-lambda-commons scripts
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .lambda-commons
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts
+            .github/lambda
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'graalvm'
+          cache: maven
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute next version
+        id: next
+        env:
+          BUMP: ${{ inputs.bump }}
+          DESCRIPTION: ${{ inputs.description }}
+        run: |
+          NAME=$(yq '.metadata.name' deploy/base.yaml)
+          VERSION=$("$COMMONS"/scripts/next-version.sh "$BUMP")
+          TAG="v$VERSION"
+          # "vX.Y.Z: " + description is the Lambda version description, limited to 256
+          if (( ${#DESCRIPTION} > 230 )); then
+            echo "::error::The description has ${#DESCRIPTION} characters, the maximum is 230."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "::error::The tag $TAG already exists."
+            exit 1
+          fi
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "name=$NAME"
+            echo "zip_name=$NAME-$VERSION.zip"
+          } >> "$GITHUB_OUTPUT"
+          echo "📦 Next version of $NAME: $TAG ($BUMP)"
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # An artifact is never overwritten: prod deploys the same zip that was tested
+      - name: Check zip does not exist in S3
+        run: |
+          KEY="${{ steps.next.outputs.name }}/${{ steps.next.outputs.zip_name }}"
+          if aws s3 ls "s3://$S3_BUCKET/$KEY" > /dev/null; then
+            echo "::error::$KEY already exists in S3."
+            exit 1
+          fi
+
+      - name: Run tests
+        run: mvn -B clean test
+
+      - name: Create tag locally
+        env:
+          DESCRIPTION: ${{ inputs.description }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.next.outputs.tag }}" -m "$DESCRIPTION"
+
+      - name: Build native binary
+        run: mvn -B package -Pnative -DskipTests
+
+      - name: Verify version of the build
+        run: |
+          VERSION="${{ steps.next.outputs.version }}"
+          BUILT=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
+          if [[ $BUILT != "$VERSION" ]]; then
+            echo "::error::The build has version $BUILT instead of $VERSION."
+            exit 1
+          fi
+          ls target/*-"$VERSION"-runner
+          unzip -l target/function.zip | grep -q ' bootstrap$'
+          cp target/function.zip "${{ steps.next.outputs.zip_name }}"
+          echo "✅ ${{ steps.next.outputs.zip_name }} built with version $VERSION"
+
+      - name: Push tag
+        id: push_tag
+        run: git push origin "${{ steps.next.outputs.tag }}"
+
+      - name: Upload zip to S3
+        id: upload
+        run: |
+          aws s3 cp "${{ steps.next.outputs.zip_name }}" \
+            "s3://$S3_BUCKET/${{ steps.next.outputs.name }}/${{ steps.next.outputs.zip_name }}"
+
+      - name: Delete tag (zip not uploaded)
+        if: failure() && steps.push_tag.outcome == 'success' && steps.upload.outcome != 'success'
+        run: git push --delete origin "${{ steps.next.outputs.tag }}"
+
+  deploy:
+    name: Deploy to test
+    needs: release
+    runs-on: ubuntu-24.04
+    steps:
+      # Full history and tags: release-notes.sh lists the pull requests since the previous tag
+      - name: Checkout tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Checkout quarkus-lambda-commons scripts
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .lambda-commons
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts
+            .github/lambda
+
+      # Idempotent, so "Re-run failed jobs" doesn't fail here
+      - name: Create pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release.outputs.tag }}
+          DESCRIPTION: ${{ inputs.description }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Pre-release $TAG already exists"
+          else
+            "$COMMONS"/scripts/release-notes.sh "$TAG" "$DESCRIPTION" > notes.md
+            cat notes.md
+            gh release create "$TAG" --verify-tag --prerelease --title "$TAG" --notes-file notes.md
+          fi
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install check-jsonschema
+        run: pipx install check-jsonschema
+
+      # Configuration before the code, so the published version takes both
+      - name: Apply manifest
+        env:
+          DESCRIPTION: ${{ needs.release.outputs.zip_name }}
+        run: |
+          "$COMMONS"/lambda/apply-manifest.sh "$ENVIRONMENT"
+
+      - name: Deploy code, publish version and move alias live
+        env:
+          VERSION_DESCRIPTION: "${{ needs.release.outputs.tag }}: ${{ inputs.description }}"
+        run: |
+          "$COMMONS"/lambda/deploy-code.sh "$ENVIRONMENT" "$S3_BUCKET" \
+            "${{ needs.release.outputs.name }}/${{ needs.release.outputs.zip_name }}" "$VERSION_DESCRIPTION"

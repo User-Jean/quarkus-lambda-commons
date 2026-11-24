@@ -9,6 +9,9 @@ pom.xml                         quarkus-lambda-commons-parent: build of the libr
 ├── quarkus-lambda-parent/        parent of the apps: + the dependencies every lambda uses and the build
 ├── commons-core/             quarkus-lambda-commons-core
 └── commons-http/             quarkus-lambda-commons-http
+
+.github/workflows/lambda-*.yaml   reusable workflows of the lambdas (workflow_call): PR validation, deploy to test, release
+.github/lambda/                   their scripts and the schema of deploy/; .github/scripts/ is shared with the library
 ```
 
 
@@ -52,6 +55,10 @@ com.xdyan.commons
 - Error messages never show internal details: a 5xx never returns the message of the exception, and the 404 of RESTEasy
   itself (`RESTEASY...`, no endpoint or a path parameter that can't be converted) returns "Resource not found"
 - Nothing of a client or a domain: this repository is meant to be public
+- The `lambda-*.yaml` workflows are called by the lambdas with the tag of their parent: they check out their scripts
+  with `job.workflow_repository` and `job.workflow_sha` into `.lambda-commons/` (after the checkout of the lambda, whose
+  clean would delete them) and run them from the root of the lambda. A new required input or secret, or a change to the
+  `deploy/` schema, breaks the lambdas: say it in the release. The example caller at the top of each one is kept up to date
 - Every public class has a test that starts Quarkus (`@QuarkusTest` in the module, which acts as the app). The test
   config is `application.properties`: the modules don't have `quarkus-config-yaml`
 - `./mvnw clean install` runs the tests of both modules and installs the jars in the local Maven repository
