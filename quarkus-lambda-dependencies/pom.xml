@@ -52,7 +52,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Quarkus: the BOM and the plugin always in the same version -->
-    <quarkus.platform.version>3.34.4</quarkus.platform.version>
+    <quarkus.platform.version>4.0.0</quarkus.platform.version>
 
     <!-- Libraries the lambdas use outside the Quarkus BOM -->
     <lombok.version>1.18.48</lombok.version>
