@@ -3,12 +3,12 @@ package com.xdyan.commons.http;
 import com.xdyan.commons.http.filter.MdcContributor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.container.ContainerRequestContext;
-
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Like an app would: the tenant of the header X-Tenant-Id. It also tries to replace "path", a field of the library.
+ * Like an app would: the tenant of the header X-Tenant-Id. It also tries to replace "path", a field
+ * of the library.
  */
 @ApplicationScoped
 public class TestMdcContributor implements MdcContributor {

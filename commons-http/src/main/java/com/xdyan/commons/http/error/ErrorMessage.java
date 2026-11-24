@@ -1,11 +1,10 @@
 package com.xdyan.commons.http.error;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.util.List;
 
 @Getter
 @Setter

@@ -7,7 +7,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
- * Keeps the log records of a category (com.xdyan.commons by default) while a test runs, with the MDC of each one.
+ * Keeps the log records of a category (com.xdyan.commons by default) while a test runs, with the
+ * MDC of each one.
  */
 public class LogCapture extends Handler implements AutoCloseable {
 
@@ -24,8 +25,8 @@ public class LogCapture extends Handler implements AutoCloseable {
   }
 
   /**
-   * The records of a category, also below the level of the app (ERROR in application.properties) when the category
-   * logs them.
+   * The records of a category, also below the level of the app (ERROR in application.properties)
+   * when the category logs them.
    */
   public static LogCapture start(String category) {
     var capture = new LogCapture(category);
@@ -46,8 +47,7 @@ public class LogCapture extends Handler implements AutoCloseable {
   }
 
   @Override
-  public void flush() {
-  }
+  public void flush() {}
 
   @Override
   public void close() {
