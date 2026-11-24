@@ -16,11 +16,9 @@
   <module name="TreeWalker">
     <module name="SuppressWarningsHolder"/>
 
-    <!-- Imports: each one explicit, nothing internal of the JDK. A static one can be .* (assertThat, equalTo… of the
-         tests) -->
-    <module name="AvoidStarImport">
-      <property name="allowStaticMemberImports" value="true"/>
-    </module>
+    <!-- Imports: each one explicit, also the static ones (import static ...Matchers.equalTo, not .*), nothing
+         internal of the JDK -->
+    <module name="AvoidStarImport"/>
     <module name="RedundantImport"/>
     <module name="IllegalImport"/>
 
