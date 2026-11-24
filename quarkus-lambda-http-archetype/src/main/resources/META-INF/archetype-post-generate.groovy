@@ -61,7 +61,7 @@ Files.walk(dir).withCloseable { paths ->
 }
 
 println ""
-println "${artifactId}: code in ${pkg}.app, API in ${groupId}.api, root path ${rootPath}, quarkus-lambda-commons ${commonsVersion}"
+println "${artifactId}: code in ${pkg}.app, API in ${groupId}.api, root path ${rootPath}, quarkus-lambda-platform ${commonsVersion}"
 println "Still to set, each marked CHANGE_ME (README.md, Primeros pasos):"
 Files.walk(dir).withCloseable { paths ->
   paths.filter { Files.isRegularFile(it) && !it.toString().endsWith('.md') }.forEach { Path file ->

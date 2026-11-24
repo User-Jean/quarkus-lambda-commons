@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/User-Jean/quarkus-lambda-commons/.github/lambda/lambda-function.schema.json",
+  "$id": "https://github.com/User-Jean/quarkus-lambda-platform/.github/lambda/lambda-function.schema.json",
   "title": "LambdaFunction manifest",
   "description": "Configuration of the lambda that apply-manifest.sh sets before deploying the code. Validated after merging deploy/base.yaml with deploy/environments/<env>.yaml.",
   "type": "object",

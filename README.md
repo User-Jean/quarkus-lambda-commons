@@ -1,4 +1,4 @@
-# quarkus-lambda-commons
+# quarkus-lambda-platform
 
 Código compartido de Quarkus para lambdas de AWS, y el parent que decide con qué versiones se construyen. Los beans
 de los módulos se activan solos, sin declarar nada: los jars traen su índice Jandex.
@@ -216,7 +216,7 @@ completo está al inicio de cada workflow):
 ```yaml
 jobs:
   deploy:
-    uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-deploy-test.yaml@v0.4.0
+    uses: User-Jean/quarkus-lambda-platform/.github/workflows/lambda-deploy-test.yaml@v0.4.0
     permissions:
       contents: write
       id-token: write

@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 /**
- * Replaces the Clock of quarkus-lambda-commons in tests so "now" is always Monday 2025/12/15 12:00
+ * Replaces the Clock of quarkus-lambda-platform in tests so "now" is always Monday 2025/12/15 12:00
  * in xdyan.commons.clock.zone.
  */
 public class FixedClockProducer {

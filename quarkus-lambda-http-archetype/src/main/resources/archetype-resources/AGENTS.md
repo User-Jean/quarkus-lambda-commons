@@ -44,7 +44,7 @@ com.example.app
 ```
 
 The code every HTTP lambda repeats comes from `com.xdyan:quarkus-lambda-commons-http`
-([quarkus-lambda-commons](https://github.com/User-Jean/quarkus-lambda-commons)); its beans and providers are active
+([quarkus-lambda-platform](https://github.com/User-Jean/quarkus-lambda-platform)); its beans and providers are active
 just by being in the pom, nothing is declared here:
 - `com.xdyan.commons.xray`: `@XRayTraced` and its interceptor (X-Ray subsegments), `ClientError`
 - `com.xdyan.commons.clock`: the `Clock` bean, in the zone `xdyan.commons.clock.zone` (`application.yaml`)
@@ -132,7 +132,7 @@ the artifacts and the OIDC role of GitHub Actions.
 - SSM parameters per environment, created by hand: `/<env>/quarkus-lambda-http-template/DB_USER` and `DB_PASS`
 
 ### Workflows (`.github/workflows/`)
-- Each one only calls a reusable workflow of quarkus-lambda-commons (`lambda-pr-validation.yaml`,
+- Each one only calls a reusable workflow of quarkus-lambda-platform (`lambda-pr-validation.yaml`,
   `lambda-deploy-test.yaml`, `lambda-release-production.yaml`) with the **same version as the parent** of `pom.xml`:
   the steps, the scripts (`apply-manifest.sh`, `deploy-code.sh`, `next-version.sh`…) and the schema of `deploy/`
   are there, not in this repository. Upgrade both together (Dependabot opens one PR for each)

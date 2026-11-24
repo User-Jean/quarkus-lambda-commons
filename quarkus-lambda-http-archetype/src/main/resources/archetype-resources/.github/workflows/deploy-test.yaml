@@ -2,8 +2,8 @@ name: Deploy to test
 
 # Creates the next version vX.Y.Z from develop and deploys it to <name>-test (metadata.name of deploy/base.yaml). Only
 # on demand: nothing is deployed on push. If the deploy fails, "Re-run failed jobs" deploys the same version again.
-# The steps are in quarkus-lambda-commons, with the same version as the parent of pom.xml:
-# https://github.com/User-Jean/quarkus-lambda-commons#workflows-de-las-lambdas
+# The steps are in quarkus-lambda-platform, with the same version as the parent of pom.xml:
+# https://github.com/User-Jean/quarkus-lambda-platform#workflows-de-las-lambdas
 on:
   workflow_dispatch:
     inputs:
@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   deploy:
-    uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-deploy-test.yaml@vQUARKUS_LAMBDA_COMMONS_VERSION
+    uses: User-Jean/quarkus-lambda-platform/.github/workflows/lambda-deploy-test.yaml@vQUARKUS_LAMBDA_COMMONS_VERSION
     permissions:
       contents: write
       id-token: write

@@ -15,7 +15,7 @@ name: Lambda release to production
 #     group: deploy-prod
 #   jobs:
 #     release:
-#       uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-release-production.yaml@vX.Y.Z
+#       uses: User-Jean/quarkus-lambda-platform/.github/workflows/lambda-release-production.yaml@vX.Y.Z
 #       permissions:
 #         contents: write
 #         id-token: write
@@ -57,8 +57,8 @@ env:
   ENVIRONMENT: prod
   AWS_REGION: ${{ inputs.aws-region }}
   S3_BUCKET: ${{ inputs.artifacts-bucket }}
-  # The scripts of quarkus-lambda-commons, checked out at the commit of this workflow
-  COMMONS: .lambda-commons/.github
+  # The scripts of quarkus-lambda-platform, checked out at the commit of this workflow
+  PLATFORM: .lambda-platform/.github
 
 jobs:
   release:
@@ -89,12 +89,12 @@ jobs:
 
       # The same commit as this workflow (job.workflow_sha), so a lambda on vX.Y.Z runs the scripts of vX.Y.Z.
       # After the checkout of the lambda: its clean would delete them
-      - name: Checkout quarkus-lambda-commons scripts
+      - name: Checkout quarkus-lambda-platform scripts
         uses: actions/checkout@v7
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
-          path: .lambda-commons
+          path: .lambda-platform
           persist-credentials: false
           sparse-checkout: .github/lambda
 
@@ -179,13 +179,13 @@ jobs:
         env:
           DESCRIPTION: ${{ steps.release.outputs.zip_name }}
         run: |
-          "$COMMONS"/lambda/apply-manifest.sh "$ENVIRONMENT"
+          "$PLATFORM"/lambda/apply-manifest.sh "$ENVIRONMENT"
 
       - name: Deploy code, publish version and move alias live
         env:
           VERSION_DESCRIPTION: ${{ steps.test.outputs.description }}
         run: |
-          "$COMMONS"/lambda/deploy-code.sh "$ENVIRONMENT" "$S3_BUCKET" \
+          "$PLATFORM"/lambda/deploy-code.sh "$ENVIRONMENT" "$S3_BUCKET" \
             "${{ steps.release.outputs.name }}/${{ steps.release.outputs.zip_name }}" "$VERSION_DESCRIPTION"
 
       - name: Promote pre-release to release

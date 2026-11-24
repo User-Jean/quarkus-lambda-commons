@@ -1,4 +1,4 @@
-# AGENTS.md — quarkus-lambda-commons
+# AGENTS.md — quarkus-lambda-platform
 
 Library shared by the Quarkus lambdas, and the parent pom of the lambdas. Four artifacts, one version (tags `vX.Y.Z`,
 as in the lambdas):
@@ -74,7 +74,7 @@ com.xdyan.commons
   workflows that a lambda would need is made in `archetype-resources/` too
 - Nothing of a client or a domain: this repository is meant to be public
 - The `lambda-*.yaml` workflows are called by the lambdas with the tag of their parent: they check out their scripts
-  with `job.workflow_repository` and `job.workflow_sha` into `.lambda-commons/` (after the checkout of the lambda, whose
+  with `job.workflow_repository` and `job.workflow_sha` into `.lambda-platform/` (after the checkout of the lambda, whose
   clean would delete them) and run them from the root of the lambda. A new required input or secret, or a change to the
   `deploy/` schema, breaks the lambdas: say it in the release. The example caller at the top of each one is kept up to date
 - Every public class has a test that starts Quarkus (`@QuarkusTest` in the module, which acts as the app). The test

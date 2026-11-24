@@ -2,7 +2,7 @@
 
 API HTTP en AWS Lambda con Quarkus: OpenAPI-first, imagen nativa, MySQL con Flyway, X-Ray y CI/CD con GitHub Actions
 (OIDC). Generada con el archetype `quarkus-lambda-http-archetype` de
-[quarkus-lambda-commons](https://github.com/User-Jean/quarkus-lambda-commons). Los detalles técnicos y las convenciones
+[quarkus-lambda-platform](https://github.com/User-Jean/quarkus-lambda-platform). Los detalles técnicos y las convenciones
 están en [AGENTS.md](AGENTS.md).
 
 ## Qué trae
@@ -15,7 +15,7 @@ están en [AGENTS.md](AGENTS.md).
 | Errores | Un solo formato `{name, message, code, errors[]}` para 400, 404 y 409 |
 | Observabilidad | Subsegmentos de X-Ray por capa (API → Service → MySQL), logs JSON con `request_id`, `trace_id` y la versión |
 | Despliegue | Manifiesto en `deploy/` (memoria, timeout, variables, secretos de SSM), versiones por tags `vX.Y.Z`, mismo zip de test a prod |
-| quarkus-lambda-commons | El parent (`quarkus-lambda-parent`) decide Quarkus, las librerías y los plugins; `commons-http` trae los errores, los logs, X-Ray y el `Clock`. Las respuestas no escriben los campos nulos. Para actualizar, solo se cambia la versión del parent |
+| quarkus-lambda-platform | El parent (`quarkus-lambda-parent`) decide Quarkus, las librerías y los plugins; `commons-http` trae los errores, los logs, X-Ray y el `Clock`. Las respuestas no escriben los campos nulos. Para actualizar, solo se cambia la versión del parent |
 | Dependabot | Un PR al mes con las versiones nuevas del parent y de las actions |
 | Ejemplo | `GET /hello` (health) y el recurso `Item` con sus tests, para copiar el patrón |
 

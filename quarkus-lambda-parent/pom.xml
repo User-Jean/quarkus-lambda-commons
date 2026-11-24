@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  Parent of the Quarkus lambdas: the versions of quarkus-lambda-dependencies (Quarkus, quarkus-lambda-commons, the
+  Parent of the Quarkus lambdas: the versions of quarkus-lambda-dependencies (Quarkus, quarkus-lambda-platform, the
   libraries and the plugins, so they are always compatible), the dependencies every lambda uses and the build. The app
   sets it as its <parent>, declares its own dependencies without <version> and the quarkus plugin with only groupId
   and artifactId. With src/main/resources/openapi.yaml it is contract-first by itself (profile contract-first).
