@@ -1,5 +1,8 @@
 package com.xdyan.commons.http;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.xdyan.commons.http.error.ConflictException;
 import com.xdyan.commons.xray.ErrorClassifier;
 import io.quarkus.test.junit.QuarkusTest;
@@ -9,17 +12,14 @@ import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 /**
- * With commons-http the ErrorClassifier of X-Ray is HttpErrorClassifier, not the default one of commons-core.
+ * With commons-http the ErrorClassifier of X-Ray is HttpErrorClassifier, not the default one of
+ * commons-core.
  */
 @QuarkusTest
 public class HttpErrorClassifierTest {
 
-  @Inject
-  ErrorClassifier errorClassifier;
+  @Inject ErrorClassifier errorClassifier;
 
   @Test
   @DisplayName("mark the 4xx as errors of the client and the rest as faults")

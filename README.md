@@ -7,6 +7,7 @@ de los módulos se activan solos, sin declarar nada: los jars traen su índice J
 |---|---|---|
 | `quarkus-lambda-parent` | El `<parent>` de cada lambda | Las versiones (de `quarkus-lambda-dependencies`); las dependencias que usa toda lambda: `quarkus-config-yaml`, `quarkus-logging-json`, Lombok, MapStruct y `quarkus-junit`; y el build: el plugin de Quarkus, el perfil `native` y el generador del OpenAPI |
 | `quarkus-lambda-dependencies` | El parent de la librería y de `quarkus-lambda-parent`. Una app no lo usa | Solo las versiones: Quarkus, los módulos de abajo, Lombok, MapStruct y los plugins |
+| `quarkus-lambda-code-rules` | Lo leen los plugins de las reglas del código. Una app no lo declara | La configuración de Checkstyle y PMD |
 | `quarkus-lambda-commons-core` | Cualquier lambda (HTTP, SQS, programada) | `quarkus-amazon-lambda-xray`, `@XRayTraced` (subsegmentos de X-Ray por capa) y el bean `Clock` |
 | `quarkus-lambda-commons-http` | Lambdas de API HTTP. Incluye `core` | El stack HTTP: `quarkus-amazon-lambda-http`, `quarkus-resteasy-jackson` y `quarkus-hibernate-validator`, que la app no declara. Respuestas de error `{name, message, code, errors[]}` para 400, 404 y 409, `CorrelationFilter` (MDC y logs de los bodies) y `DateTimeMapper` (`dd/MM/yyyy`) |
 
@@ -146,6 +147,30 @@ quarkus:
   jackson:
     serialization-inclusion: always
 ```
+
+## Reglas del código
+
+El parent revisa el código de cada lambda, igual que en esta librería. Una violación hace fallar el build:
+
+- **Checkstyle** antes de compilar (`validate`) y **PMD** después de compilar (`process-classes`): los dos corren en
+  cualquier `./mvnw test`
+- **El formato** en `./mvnw verify` (y en el PR validation): un espacio de más no detiene los tests mientras se
+  desarrolla
+
+| Herramienta | Revisa | Configuración |
+|---|---|---|
+| Spotless | El formato: google-java-format (2 espacios, 100 columnas, orden de imports) y que no haya imports sin usar | No se configura |
+| Checkstyle | Nombres, imports con `*`, llaves en todo `if`/`for`/`while`, `equals` y `hashCode` juntos, `switch` con `default` y sin caer al siguiente `case`, `==` entre strings, javadoc en las interfaces públicas, código comentado | `quarkus-lambda-code-rules`: `quarkus-lambda/checkstyle.xml` |
+| PMD | Bugs y malas prácticas: código sin usar, `System.out`, excepciones perdidas o vacías, `catch (Exception e)`, recursos sin cerrar, comparaciones | `quarkus-lambda-code-rules`: `quarkus-lambda/pmd-ruleset.xml` |
+
+- **`./mvnw spotless:apply`** formatea el código: el formato nunca se arregla a mano. Conviene configurar el IDE con
+  google-java-format (plugin de IntelliJ) para que formatee igual
+- Solo se revisa `src/main/java` y `src/test/java`: el código generado del `openapi.yaml` no
+- Un comentario `//` de más de 100 columnas se corta en dos líneas: hay que reescribirlo
+- Una excepción a una regla va en el lugar, con el motivo en un comentario:
+  `@SuppressWarnings("PMD.AvoidCatchingGenericException")` o `@SuppressWarnings("checkstyle:membername")`
+- Un plugin entero se apaga con `-Dspotless.check.skip`, `-Dcheckstyle.skip` o `-Dpmd.skip` (en el pom de la app, como
+  propiedad, si es para siempre)
 
 ## Workflows de las lambdas
 

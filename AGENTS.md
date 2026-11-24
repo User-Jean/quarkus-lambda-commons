@@ -6,6 +6,7 @@ as in the lambdas):
 ```
 pom.xml                         quarkus-lambda-commons-parent: build of the library (modules, Jandex, Lombok, tests)
 ├── quarkus-lambda-dependencies/  versions, metadata and publishing: parent of pom.xml and of quarkus-lambda-parent
+├── quarkus-lambda-code-rules/    the Checkstyle and PMD configuration (child of quarkus-lambda-dependencies)
 ├── quarkus-lambda-parent/        parent of the apps: + the dependencies every lambda uses and the build
 ├── commons-core/             quarkus-lambda-commons-core
 └── commons-http/             quarkus-lambda-commons-http
@@ -54,6 +55,17 @@ com.xdyan.commons
   `MdcContributor` of the app can't replace them. Renaming one breaks the log queries of the apps: say it in the release
 - Error messages never show internal details: a 5xx never returns the message of the exception, and the 404 of RESTEasy
   itself (`RESTEASY...`, no endpoint or a path parameter that can't be converted) returns "Resource not found"
+- The rules of the code run the same in the library (root pom) and in the apps (`quarkus-lambda-parent`): Checkstyle
+  in `validate` (before compiling), PMD in `process-classes` (it needs the classes, so `./mvnw test` runs both) and
+  Spotless with google-java-format in `verify`, configured in `quarkus-lambda-dependencies` with their config in
+  `quarkus-lambda-code-rules`. Format with `./mvnw spotless:apply`, never by hand. A rule added there fails the build
+  of the apps that break it: say it in the release. `quarkus-lambda-code-rules` has `quarkus-lambda-dependencies` as
+  parent, not the root pom, which runs the plugins that depend on it. A suppression goes where it applies, with the
+  reason in a comment
+- Comments: a public interface has a javadoc that says what it is for (Checkstyle). A `//` comment explains why, never
+  what the code already says: if the code needs one to be understood, rename or split it first. Commented-out code is
+  deleted, it is in git (Checkstyle). The same holds for the lambdas: `quarkus-lambda-code-rules` checks the first and
+  the last
 - Nothing of a client or a domain: this repository is meant to be public
 - The `lambda-*.yaml` workflows are called by the lambdas with the tag of their parent: they check out their scripts
   with `job.workflow_repository` and `job.workflow_sha` into `.lambda-commons/` (after the checkout of the lambda, whose

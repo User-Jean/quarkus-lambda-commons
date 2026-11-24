@@ -7,9 +7,8 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import java.util.List;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @Provider
 public class BadRequestProvider implements ExceptionMapper<BadRequestException> {
@@ -20,15 +19,19 @@ public class BadRequestProvider implements ExceptionMapper<BadRequestException> 
   @Override
   public Response toResponse(BadRequestException exception) {
     // One error per field when there are several (InvalidFieldsException)
-    List<String> messages = exception instanceof InvalidFieldsException invalidFields
-        ? invalidFields.getMessages()
-        : List.of(exception.getMessage());
-    List<ErrorMessage.Detail> details = messages.stream().map(message -> {
-      var errorDetail = new ErrorMessage.Detail();
-      errorDetail.setMessage(message);
-      errorDetail.setComponent(artifactId);
-      return errorDetail;
-    }).toList();
+    List<String> messages =
+        exception instanceof InvalidFieldsException invalidFields
+            ? invalidFields.getMessages()
+            : List.of(exception.getMessage());
+    List<ErrorMessage.Detail> details =
+        messages.stream()
+            .map(message -> {
+              var errorDetail = new ErrorMessage.Detail();
+              errorDetail.setMessage(message);
+              errorDetail.setComponent(artifactId);
+              return errorDetail;
+            })
+            .toList();
 
     var status = exception.getResponse().getStatus();
 
@@ -40,8 +43,6 @@ public class BadRequestProvider implements ExceptionMapper<BadRequestException> 
 
     ErrorLog.log(status, exception);
 
-    return Response.status(status)
-        .entity(error)
-        .build();
+    return Response.status(status).entity(error).build();
   }
 }

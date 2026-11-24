@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+  The rules of the code of the library and of the lambdas: Checkstyle and PMD read their configuration from this jar
+  (dependency of the plugins in quarkus-lambda-dependencies). Its parent is quarkus-lambda-dependencies, not the root
+  pom: the root pom runs those plugins, which depend on this jar.
+-->
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.xdyan</groupId>
+    <artifactId>quarkus-lambda-dependencies</artifactId>
+    <version>${revision}</version>
+    <relativePath>../quarkus-lambda-dependencies/pom.xml</relativePath>
+  </parent>
+  <artifactId>quarkus-lambda-code-rules</artifactId>
+  <name>quarkus-lambda-code-rules</name>
+  <description>Checkstyle and PMD rules of the Quarkus lambdas</description>
+</project>

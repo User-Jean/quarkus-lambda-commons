@@ -1,16 +1,15 @@
 package com.xdyan.commons.http.error.provider;
 
+import static jakarta.ws.rs.core.Response.Status.CONFLICT;
+
+import com.xdyan.commons.http.error.ConflictException;
 import com.xdyan.commons.http.error.ErrorLog;
 import com.xdyan.commons.http.error.ErrorMessage;
-import com.xdyan.commons.http.error.ConflictException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import java.util.List;
-
-import static jakarta.ws.rs.core.Response.Status.CONFLICT;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @Provider
 public class ConflictProvider implements ExceptionMapper<ConflictException> {
@@ -32,8 +31,6 @@ public class ConflictProvider implements ExceptionMapper<ConflictException> {
 
     ErrorLog.log(CONFLICT.getStatusCode(), exception);
 
-    return Response.status(CONFLICT)
-        .entity(error)
-        .build();
+    return Response.status(CONFLICT).entity(error).build();
   }
 }

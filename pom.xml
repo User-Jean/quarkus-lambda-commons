@@ -22,6 +22,7 @@
 
   <modules>
     <module>quarkus-lambda-dependencies</module>
+    <module>quarkus-lambda-code-rules</module>
     <module>quarkus-lambda-parent</module>
     <module>commons-core</module>
     <module>commons-http</module>
@@ -69,6 +70,17 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <!-- The rules of the code, the same as the lambdas (quarkus-lambda-code-rules) -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-pmd-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

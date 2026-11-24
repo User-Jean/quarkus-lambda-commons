@@ -7,28 +7,31 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-
 import java.util.List;
 import java.util.Map;
 
-/**
- * Endpoints of the tests only: each one throws one of the errors the library maps.
- */
+/** Endpoints of the tests only: each one throws one of the errors the library maps. */
 @Path("/test")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class TestResource {
 
-  public record Body(@NotNull @Pattern(regexp = "^[a-z]+$") String name, @NotNull Integer unitPrice) {
-  }
+  public record Body(
+      @NotNull @Pattern(regexp = "^[a-z]+$") String name, @NotNull Integer unitPrice) {}
 
-  public record Fields(String name, String note, List<String> tags) {
-  }
+  public record Fields(String name, String note, List<String> tags) {}
 
-  @Inject
-  DateTimeMapper dateTimeMapper;
+  @Inject DateTimeMapper dateTimeMapper;
 
   @GET
   @Path("/not-found")
@@ -57,7 +60,8 @@ public class TestResource {
   @GET
   @Path("/invalid-fields")
   public String invalidFields() {
-    throw new InvalidFieldsException(List.of("The field 'a' is required", "The field 'b' is required"));
+    throw new InvalidFieldsException(
+        List.of("The field 'a' is required", "The field 'b' is required"));
   }
 
   @GET
@@ -68,8 +72,7 @@ public class TestResource {
 
   @DELETE
   @Path("/no-content")
-  public void noContent() {
-  }
+  public void noContent() {}
 
   @GET
   @Path("/date/{value}")
