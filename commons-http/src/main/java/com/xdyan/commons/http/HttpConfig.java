@@ -11,6 +11,7 @@ public interface HttpConfig {
 
   Openapi openapi();
 
+  /** xdyan.commons.http.log.*: the request and response bodies in the log (CorrelationFilter). */
   interface Log {
     /**
      * Characters of the request and response bodies written to the log; the rest is cut. Don't send
@@ -20,6 +21,7 @@ public interface HttpConfig {
     int maxBodyLength();
   }
 
+  /** xdyan.commons.http.openapi.*: the contract of the app (ContractFirstCheck). */
   interface Openapi {
     /**
      * The HTTP lambdas are contract-first: in dev and tests the app doesn't start without

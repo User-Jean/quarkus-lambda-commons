@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -120,6 +119,8 @@ public class CorrelationFilter
     }
   }
 
+  // CloseResource: the stream of the response belongs to RESTEasy, which closes it
+  @SuppressWarnings("PMD.CloseResource")
   @Override
   public void aroundWriteTo(WriterInterceptorContext context)
       throws IOException, WebApplicationException {
@@ -145,10 +146,8 @@ public class CorrelationFilter
         }
       }
       // The whole body is already here: with its length it is not sent chunked. Above 8 KB a
-      // chunked response
-      // reaches the client of the tests (mock event server of quarkus-amazon-lambda-http) without
-      // an end, and
-      // the request hangs until its timeout
+      // chunked response reaches the client of the tests (mock event server of
+      // quarkus-amazon-lambda-http) without an end, and the request hangs until its timeout
       context.getHeaders().putSingle(HttpHeaders.CONTENT_LENGTH, responseBytes.length);
       originalStream.write(responseBytes);
 
@@ -179,7 +178,10 @@ public class CorrelationFilter
             MDC.put(key, value);
           }
         });
-      } catch (RuntimeException e) {
+        // A bug in a contributor of the app must not break the request: it only loses its fields
+      } catch (
+          @SuppressWarnings("PMD.AvoidCatchingGenericException")
+          RuntimeException e) {
         log.error("MDC fields of {} not added", contributor.getClass().getName(), e);
       }
     }
@@ -201,9 +203,9 @@ public class CorrelationFilter
   }
 
   private String resolveRequestId(ContainerRequestContext requestContext) {
-    return Optional.ofNullable(requestContext.getHeaderString(AGW_REQUEST_ID_KEY))
+    return ofNullable(requestContext.getHeaderString(AGW_REQUEST_ID_KEY))
         .or(() ->
-            Optional.ofNullable(httpEventInstance.get())
+            ofNullable(httpEventInstance.get())
                 .map(APIGatewayV2HTTPEvent::getRequestContext)
                 .map(APIGatewayV2HTTPEvent.RequestContext::getRequestId))
         .orElse(EMPTY);

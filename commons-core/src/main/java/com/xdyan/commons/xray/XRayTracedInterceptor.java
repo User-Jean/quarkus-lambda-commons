@@ -22,11 +22,13 @@ public class XRayTracedInterceptor {
 
   @Inject ErrorClassifier errorClassifier;
 
+  // CloseResource: the subsegment is ended by AWSXRay.endSubsegment() in the finally.
+  // AvoidCatchingGenericException: any exception of the method is recorded and thrown again as is
+  @SuppressWarnings({"PMD.CloseResource", "PMD.AvoidCatchingGenericException"})
   @AroundInvoke
   Object trace(InvocationContext ctx) throws Exception {
     // No trace context outside Lambda (tests, local run). Checked per call, not in a static field,
-    // because the
-    // native build initializes classes at build time.
+    // because the native build initializes classes at build time.
     // getCurrentSegmentOptional() can't be used: in Lambda the parent segment is created lazily by
     // beginSubsegment from the trace header, so it is always empty before the first subsegment.
     if (System.getenv("LAMBDA_TASK_ROOT") == null) {
@@ -40,8 +42,7 @@ public class XRayTracedInterceptor {
     Subsegment subsegment = AWSXRay.beginSubsegment(layer + " " + operation);
     try {
       // No namespace/SQL data on purpose: with them X-Ray adds an inferred database segment, which
-      // Grafana shows
-      // as a separate group outside the function instead of in its timeline.
+      // Grafana shows as a separate group outside the function instead of in its timeline.
       subsegment.putAnnotation("layer", layer);
       subsegment.putAnnotation("operation", operation);
       return ctx.proceed();

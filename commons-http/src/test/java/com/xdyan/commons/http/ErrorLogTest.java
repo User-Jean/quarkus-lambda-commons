@@ -3,7 +3,10 @@ package com.xdyan.commons.http;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.jboss.logmanager.ExtLogRecord;
@@ -88,7 +91,7 @@ public class ErrorLogTest {
 
       assertEquals(
           2,
-          capture.messages().stream().filter(m -> m.equals("INFO Request Body is empty")).count(),
+          capture.messages().stream().filter("INFO Request Body is empty"::equals).count(),
           capture.messages().toString());
     }
   }
