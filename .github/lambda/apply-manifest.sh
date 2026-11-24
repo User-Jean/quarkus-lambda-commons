@@ -24,7 +24,7 @@ MODE=${2:-apply}
 ROOT=${PROJECT_DIR:-$PWD}
 BASE=$ROOT/deploy/base.yaml
 ENVIRONMENT_FILE=$ROOT/deploy/environments/$ENV_NAME.yaml
-# Next to this script: the lambda runs the one of the version of quarkus-lambda-commons it uses
+# Next to this script: the lambda runs the one of the version of quarkus-lambda-platform it uses
 SCHEMA=$(cd "$(dirname "$0")" && pwd)/lambda-function.schema.json
 [[ -f $BASE ]] || { echo "Manifest not found: $BASE (run it from the root of the lambda)" >&2; exit 1; }
 [[ -f $ENVIRONMENT_FILE ]] || { echo "Environment not found: $ENVIRONMENT_FILE" >&2; exit 1; }

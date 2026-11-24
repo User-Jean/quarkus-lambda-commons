@@ -1,6 +1,6 @@
 # Configuration shared by every environment. environments/<env>.yaml is deep merged on top of it,
 # and ${ENV} is replaced by the environment name (test, prod).
-# Validated and applied by the workflows of quarkus-lambda-commons (.github/lambda/apply-manifest.sh).
+# Validated and applied by the workflows of quarkus-lambda-platform (.github/lambda/apply-manifest.sh).
 apiVersion: deploy/v1
 kind: LambdaFunction
 metadata:

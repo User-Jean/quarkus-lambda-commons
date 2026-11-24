@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  The versions of the Quarkus lambdas, without configuring anything: Quarkus, the modules of quarkus-lambda-commons,
+  The versions of the Quarkus lambdas, without configuring anything: Quarkus, the modules of quarkus-lambda-platform,
   Lombok, MapStruct and the plugins. Parent of the library (pom.xml at the root) and of quarkus-lambda-parent, the
   parent of the apps. An app uses quarkus-lambda-parent, not this one.
 -->
@@ -14,8 +14,8 @@
   <version>${revision}</version>
   <packaging>pom</packaging>
   <name>quarkus-lambda-dependencies</name>
-  <description>Versions of the Quarkus lambdas: Quarkus, quarkus-lambda-commons, the libraries and the plugins</description>
-  <url>https://github.com/User-Jean/quarkus-lambda-commons</url>
+  <description>Versions of the Quarkus lambdas: Quarkus, quarkus-lambda-platform, the libraries and the plugins</description>
+  <url>https://github.com/User-Jean/quarkus-lambda-platform</url>
 
   <!-- Required by Maven Central, inherited by the modules as they are (without appending their artifactId to the
        url and scm: child.*.inherit.append.path). An app inherits them too; it can declare its own -->
@@ -35,14 +35,14 @@
   </developers>
   <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false"
        child.scm.url.inherit.append.path="false">
-    <connection>scm:git:https://github.com/User-Jean/quarkus-lambda-commons.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/User-Jean/quarkus-lambda-commons.git</developerConnection>
-    <url>https://github.com/User-Jean/quarkus-lambda-commons</url>
+    <connection>scm:git:https://github.com/User-Jean/quarkus-lambda-platform.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/User-Jean/quarkus-lambda-platform.git</developerConnection>
+    <url>https://github.com/User-Jean/quarkus-lambda-platform</url>
   </scm>
 
   <properties>
     <revision>0.0.0-SNAPSHOT</revision>
-    <!-- The version of quarkus-lambda-commons: the one of this pom, written by the versioning extension
+    <!-- The version of quarkus-lambda-platform: the one of this pom, written by the versioning extension
          (.mvn/maven-git-versioning-extension.xml). ${project.version} would be the version of the app -->
     <quarkus-lambda-commons.version>0.0.0-SNAPSHOT</quarkus-lambda-commons.version>
 
@@ -275,7 +275,7 @@
   </build>
 
   <profiles>
-    <!-- Publishing of quarkus-lambda-commons to Maven Central (workflow "Release"): sources, javadoc, GPG signatures
+    <!-- Publishing of quarkus-lambda-platform to Maven Central (workflow "Release"): sources, javadoc, GPG signatures
          and the upload to the Central Portal. Needs the server "central" in settings.xml (user token) and the GPG key.
          Here, the parent of every published pom, so all of them are signed and uploaded. Not for the apps -->
     <profile>
@@ -338,7 +338,7 @@
               <publishingServerId>central</publishingServerId>
               <autoPublish>true</autoPublish>
               <waitUntil>published</waitUntil>
-              <deploymentName>quarkus-lambda-commons ${project.version}</deploymentName>
+              <deploymentName>quarkus-lambda-platform ${project.version}</deploymentName>
             </configuration>
           </plugin>
         </plugins>

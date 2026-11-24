@@ -8,7 +8,7 @@
 
   src/main/resources/archetype-resources is the project, copied as is (not filtered by Velocity: the workflows and the
   docs are full of ${...} and ##). META-INF/archetype-post-generate.groovy renames it: com.example, the name, the root
-  path and the version of quarkus-lambda-commons. The test (src/test/resources/projects) generates a project and runs
+  path and the version of quarkus-lambda-platform. The test (src/test/resources/projects) generates a project and runs
   its verify, so ./mvnw install needs the modules of this version installed: they are built before this one.
 -->
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"

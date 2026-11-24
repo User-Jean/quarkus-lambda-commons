@@ -20,7 +20,7 @@ name: Lambda deploy to test
 #     group: deploy-test
 #   jobs:
 #     deploy:
-#       uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-deploy-test.yaml@vX.Y.Z
+#       uses: User-Jean/quarkus-lambda-platform/.github/workflows/lambda-deploy-test.yaml@vX.Y.Z
 #       permissions:
 #         contents: write
 #         id-token: write
@@ -71,8 +71,8 @@ env:
   ENVIRONMENT: test
   AWS_REGION: ${{ inputs.aws-region }}
   S3_BUCKET: ${{ inputs.artifacts-bucket }}
-  # The scripts of quarkus-lambda-commons, checked out at the commit of this workflow
-  COMMONS: .lambda-commons/.github
+  # The scripts of quarkus-lambda-platform, checked out at the commit of this workflow
+  PLATFORM: .lambda-platform/.github
 
 jobs:
   release:
@@ -113,12 +113,12 @@ jobs:
 
       # The same commit as this workflow (job.workflow_sha), so a lambda on vX.Y.Z runs the scripts of vX.Y.Z.
       # After the checkout of the lambda: its clean would delete them
-      - name: Checkout quarkus-lambda-commons scripts
+      - name: Checkout quarkus-lambda-platform scripts
         uses: actions/checkout@v7
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
-          path: .lambda-commons
+          path: .lambda-platform
           persist-credentials: false
           sparse-checkout: |
             .github/scripts
@@ -139,7 +139,7 @@ jobs:
           DESCRIPTION: ${{ inputs.description }}
         run: |
           NAME=$(yq '.metadata.name' deploy/base.yaml)
-          VERSION=$("$COMMONS"/scripts/next-version.sh "$BUMP")
+          VERSION=$("$PLATFORM"/scripts/next-version.sh "$BUMP")
           TAG="v$VERSION"
           # "vX.Y.Z: " + description is the Lambda version description, limited to 256
           if (( ${#DESCRIPTION} > 230 )); then
@@ -226,12 +226,12 @@ jobs:
           ref: ${{ needs.release.outputs.tag }}
           fetch-depth: 0
 
-      - name: Checkout quarkus-lambda-commons scripts
+      - name: Checkout quarkus-lambda-platform scripts
         uses: actions/checkout@v7
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
-          path: .lambda-commons
+          path: .lambda-platform
           persist-credentials: false
           sparse-checkout: |
             .github/scripts
@@ -247,7 +247,7 @@ jobs:
           if gh release view "$TAG" > /dev/null 2>&1; then
             echo "Pre-release $TAG already exists"
           else
-            "$COMMONS"/scripts/release-notes.sh "$TAG" "$DESCRIPTION" > notes.md
+            "$PLATFORM"/scripts/release-notes.sh "$TAG" "$DESCRIPTION" > notes.md
             cat notes.md
             gh release create "$TAG" --verify-tag --prerelease --title "$TAG" --notes-file notes.md
           fi
@@ -266,11 +266,11 @@ jobs:
         env:
           DESCRIPTION: ${{ needs.release.outputs.zip_name }}
         run: |
-          "$COMMONS"/lambda/apply-manifest.sh "$ENVIRONMENT"
+          "$PLATFORM"/lambda/apply-manifest.sh "$ENVIRONMENT"
 
       - name: Deploy code, publish version and move alias live
         env:
           VERSION_DESCRIPTION: "${{ needs.release.outputs.tag }}: ${{ inputs.description }}"
         run: |
-          "$COMMONS"/lambda/deploy-code.sh "$ENVIRONMENT" "$S3_BUCKET" \
+          "$PLATFORM"/lambda/deploy-code.sh "$ENVIRONMENT" "$S3_BUCKET" \
             "${{ needs.release.outputs.name }}/${{ needs.release.outputs.zip_name }}" "$VERSION_DESCRIPTION"

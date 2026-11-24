@@ -3,9 +3,9 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <!-- Decides the versions of Quarkus, quarkus-lambda-commons, the plugins and the libraries below, so they are always
+  <!-- Decides the versions of Quarkus, quarkus-lambda-platform, the plugins and the libraries below, so they are always
        compatible, and brings quarkus-config-yaml, quarkus-logging-json, Lombok, MapStruct and quarkus-junit:
-       https://github.com/User-Jean/quarkus-lambda-commons. To upgrade, change only this version -->
+       https://github.com/User-Jean/quarkus-lambda-platform. To upgrade, change only this version -->
   <parent>
     <groupId>com.xdyan</groupId>
     <artifactId>quarkus-lambda-parent</artifactId>

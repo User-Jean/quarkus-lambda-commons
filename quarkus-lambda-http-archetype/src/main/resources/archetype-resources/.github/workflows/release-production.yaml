@@ -2,8 +2,8 @@ name: Release to production
 
 # Takes the most recent pre-release vX.Y.Z, checks that it is the one live in test, moves main to its commit and
 # deploys the same zip to <name>-prod (not rebuilt). If it fails, "Re-run failed jobs" continues with the same version.
-# The steps are in quarkus-lambda-commons, with the same version as the parent of pom.xml:
-# https://github.com/User-Jean/quarkus-lambda-commons#workflows-de-las-lambdas
+# The steps are in quarkus-lambda-platform, with the same version as the parent of pom.xml:
+# https://github.com/User-Jean/quarkus-lambda-platform#workflows-de-las-lambdas
 on:
   workflow_dispatch:
     inputs:
@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   release:
-    uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-release-production.yaml@vQUARKUS_LAMBDA_COMMONS_VERSION
+    uses: User-Jean/quarkus-lambda-platform/.github/workflows/lambda-release-production.yaml@vQUARKUS_LAMBDA_COMMONS_VERSION
     permissions:
       contents: write
       id-token: write

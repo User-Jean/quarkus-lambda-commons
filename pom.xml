@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  Build of quarkus-lambda-commons: the modules and what only the library needs (Jandex index, Lombok, test
+  Build of quarkus-lambda-platform: the modules and what only the library needs (Jandex index, Lombok, test
   dependencies). The versions and the metadata come from quarkus-lambda-dependencies, the same versions the apps get
   through quarkus-lambda-parent. Not quarkus-lambda-parent itself: its dependencies would reach every app through the
   modules.
@@ -17,7 +17,7 @@
   </parent>
   <artifactId>quarkus-lambda-commons-parent</artifactId>
   <packaging>pom</packaging>
-  <name>quarkus-lambda-commons</name>
+  <name>quarkus-lambda-platform</name>
   <description>Shared Quarkus code for AWS Lambda</description>
 
   <modules>
