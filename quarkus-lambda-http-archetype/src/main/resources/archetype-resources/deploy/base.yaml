@@ -1,0 +1,15 @@
+# Configuration shared by every environment. environments/<env>.yaml is deep merged on top of it,
+# and ${ENV} is replaced by the environment name (test, prod).
+# Validated and applied by the workflows of quarkus-lambda-commons (.github/lambda/apply-manifest.sh).
+apiVersion: deploy/v1
+kind: LambdaFunction
+metadata:
+  # The functions are <name>-test and <name>-prod
+  name: quarkus-lambda-http-template
+spec:
+  memorySize: 256
+  timeout: 30
+  secrets:
+    # SecureString parameters, created by hand in each environment
+    DB_USER: ssm:/${ENV}/quarkus-lambda-http-template/DB_USER
+    DB_PASS: ssm:/${ENV}/quarkus-lambda-http-template/DB_PASS

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- What the archetype asks and copies. Nothing is filtered by Velocity (filtered="false"), except pom.xml, which the
+     archetype always processes: archetype-post-generate.groovy replaces the names of the example project -->
+<archetype-descriptor xmlns="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0"
+                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                      xsi:schemaLocation="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0 https://maven.apache.org/xsd/archetype-descriptor-1.1.0.xsd"
+                      name="quarkus-lambda-http">
+  <requiredProperties>
+    <!-- Also the name of the lambda (<artifactId>-test, -prod), the S3 folder and the SSM parameters -->
+    <requiredProperty key="artifactId">
+      <validationRegex>^[a-z][a-z0-9-]*[a-z0-9]$</validationRegex>
+    </requiredProperty>
+    <requiredProperty key="groupId">
+      <validationRegex>^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$</validationRegex>
+    </requiredProperty>
+    <!-- Not used: the version comes from the git tags v* (maven-git-versioning-extension) -->
+    <requiredProperty key="version">
+      <defaultValue>0.0.0-SNAPSHOT</defaultValue>
+    </requiredProperty>
+    <requiredProperty key="package">
+      <defaultValue>${groupId}</defaultValue>
+    </requiredProperty>
+    <requiredProperty key="rootPath">
+      <defaultValue>/api/v1</defaultValue>
+      <validationRegex>^(/[a-z0-9-]+)+$</validationRegex>
+    </requiredProperty>
+  </requiredProperties>
+
+  <fileSets>
+    <!-- The code goes in <package>/app: the archetype adds the folders of the package -->
+    <fileSet filtered="false" packaged="true" encoding="UTF-8">
+      <directory>src/main/java</directory>
+      <includes>
+        <include>**/*.java</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" packaged="true" encoding="UTF-8">
+      <directory>src/test/java</directory>
+      <includes>
+        <include>**/*.java</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory>src/main/resources</directory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory>src/test/resources</directory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory>.github</directory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory>.mvn</directory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory>deploy</directory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory>docs</directory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory>events</directory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory>http</directory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+    <!-- .gitignore is renamed by the script: Maven leaves it out of the jar -->
+    <fileSet filtered="false" encoding="UTF-8">
+      <directory/>
+      <includes>
+        <include>AGENTS.md</include>
+        <include>README.md</include>
+        <include>Dockerfile</include>
+        <include>mvnw</include>
+        <include>__gitignore__</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</archetype-descriptor>

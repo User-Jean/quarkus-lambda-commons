@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!--
+  The archetype of an HTTP lambda: generates a project with quarkus-lambda-parent and the reusable workflows of the
+  same version as this archetype, the example resource Item and its tests.
+
+    mvn archetype:generate -DarchetypeGroupId=com.xdyan -DarchetypeArtifactId=quarkus-lambda-http-archetype \
+      -DarchetypeVersion=X.Y.Z -DgroupId=com.acme.orders -DartifactId=lambda-http-orders -DrootPath=/orders/v1
+
+  src/main/resources/archetype-resources is the project, copied as is (not filtered by Velocity: the workflows and the
+  docs are full of ${...} and ##). META-INF/archetype-post-generate.groovy renames it: com.example, the name, the root
+  path and the version of quarkus-lambda-commons. The test (src/test/resources/projects) generates a project and runs
+  its verify, so ./mvnw install needs the modules of this version installed: they are built before this one.
+-->
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.xdyan</groupId>
+    <artifactId>quarkus-lambda-dependencies</artifactId>
+    <version>${revision}</version>
+    <relativePath>../quarkus-lambda-dependencies/pom.xml</relativePath>
+  </parent>
+  <artifactId>quarkus-lambda-http-archetype</artifactId>
+  <packaging>maven-archetype</packaging>
+  <name>quarkus-lambda-http-archetype</name>
+  <description>Archetype of an HTTP lambda with quarkus-lambda-parent: contract-first, MySQL, native, CI/CD</description>
+
+  <build>
+    <extensions>
+      <extension>
+        <groupId>org.apache.maven.archetype</groupId>
+        <artifactId>archetype-packaging</artifactId>
+        <version>${archetype-plugin.version}</version>
+      </extension>
+    </extensions>
+    <plugins>
+      <plugin>
+        <artifactId>maven-archetype-plugin</artifactId>
+        <version>${archetype-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- Maven Central requires a javadoc jar, and maven-javadoc-plugin skips an archetype (not Java): the jar has
+         src/main/javadoc/index.html, with the usage -->
+    <profile>
+      <id>publish-central</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>${jar-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>javadoc-jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <classifier>javadoc</classifier>
+                  <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

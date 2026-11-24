@@ -1,0 +1,31 @@
+# /item for the IntelliJ HTTP Client. Pick "local" or "test" from http-client.env.json.
+
+### Create an item
+POST {{base_url}}/item
+Content-Type: application/json
+
+{
+  "name": "Teclado mecánico",
+  "description": "Switches marrones",
+  "unit_price": 149.90
+}
+
+> {%
+  client.global.set("item_id", response.body.id);
+  client.test("created", () => client.assert(response.status === 201, "status " + response.status));
+%}
+
+### Get the created item
+GET {{base_url}}/item/{{item_id}}
+
+### List the items
+GET {{base_url}}/item
+
+### Same name again: 409
+POST {{base_url}}/item
+Content-Type: application/json
+
+{
+  "name": "Teclado mecánico",
+  "unit_price": 10
+}

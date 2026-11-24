@@ -1,0 +1,11 @@
+# GET /hello for the IntelliJ HTTP Client. Pick "local" or "test" from http-client.env.json.
+
+### Lambda and database are up
+GET {{base_url}}/hello
+
+> {%
+  client.test("database is UP", () => {
+    client.assert(response.status === 200, "status " + response.status);
+    client.assert(response.body.database === "UP", "database " + response.body.database);
+  });
+%}

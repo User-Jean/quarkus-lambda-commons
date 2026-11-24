@@ -1,0 +1,47 @@
+xdyan:
+  commons:
+    clock:
+      zone: America/Lima
+
+app:
+  name: @project.artifactId@
+  version: @project.version@
+  group: @project.groupId@
+
+quarkus:
+  http:
+    root-path: /api/v1
+  flyway:
+    locations: classpath:flyway
+    migrate-at-start: true
+    # To adopt a database that already exists: write its current schema as V1.0.0 and uncomment these two, so
+    # Flyway only records the baseline there and runs the later migrations
+    # baseline-on-migrate: true
+    # baseline-version: 1.0.0
+
+  hibernate-orm:
+    schema-management:
+      strategy: none
+    physical-naming-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+  datasource:
+    db-kind: mysql
+    username: ${DB_USER:root}
+    password: ${DB_PASS:password}
+    jdbc:
+      url: jdbc:mysql://${DB_HOST:127.0.0.1}:3306/${DB_DATABASE:app}?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+
+  log:
+    level: ERROR
+    category:
+      "com.example.app":
+        level: INFO
+    console:
+      json:
+        excluded-keys: sequence,processName,hostName,processId,threadName,threadId,ndc,loggerClassName
+        additional-field:
+          app_name:
+            value: "${app.name}"
+          app_group:
+            value: "${app.group}"
+          app_version:
+            value: "${app.version}"

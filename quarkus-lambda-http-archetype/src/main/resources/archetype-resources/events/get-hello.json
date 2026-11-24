@@ -1,0 +1,29 @@
+{
+  "version": "2.0",
+  "routeKey": "$default",
+  "rawPath": "/api/v1/hello",
+  "rawQueryString": "",
+  "headers": {
+    "content-type": "application/json",
+    "x-client-name": "example-frontend"
+  },
+  "requestContext": {
+    "accountId": "123456789012",
+    "apiId": "abcdef1234",
+    "domainName": "abcdef1234.execute-api.us-east-1.amazonaws.com",
+    "domainPrefix": "abcdef1234",
+    "http": {
+      "method": "GET",
+      "path": "/api/v1/hello",
+      "protocol": "HTTP/1.1",
+      "sourceIp": "203.0.113.10",
+      "userAgent": "Mozilla/5.0"
+    },
+    "requestId": "Yx2hTgxyIAMEbXw=",
+    "routeKey": "$default",
+    "stage": "$default",
+    "time": "15/Dec/2025:17:00:00 +0000",
+    "timeEpoch": 1765818000000
+  },
+  "isBase64Encoded": false
+}

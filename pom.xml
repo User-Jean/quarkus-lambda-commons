@@ -26,6 +26,8 @@
     <module>quarkus-lambda-parent</module>
     <module>commons-core</module>
     <module>commons-http</module>
+    <!-- Last: its test generates a project with the modules above, installed before it -->
+    <module>quarkus-lambda-http-archetype</module>
   </modules>
 
   <dependencies>

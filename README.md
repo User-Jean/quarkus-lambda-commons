@@ -8,12 +8,39 @@ de los módulos se activan solos, sin declarar nada: los jars traen su índice J
 | `quarkus-lambda-parent` | El `<parent>` de cada lambda | Las versiones (de `quarkus-lambda-dependencies`); las dependencias que usa toda lambda: `quarkus-config-yaml`, `quarkus-logging-json`, Lombok, MapStruct y `quarkus-junit`; y el build: el plugin de Quarkus, el perfil `native` y el generador del OpenAPI |
 | `quarkus-lambda-dependencies` | El parent de la librería y de `quarkus-lambda-parent`. Una app no lo usa | Solo las versiones: Quarkus, los módulos de abajo, Lombok, MapStruct y los plugins |
 | `quarkus-lambda-code-rules` | Lo leen los plugins de las reglas del código. Una app no lo declara | La configuración de Checkstyle y PMD |
+| `quarkus-lambda-http-archetype` | Crear una lambda HTTP nueva | El proyecto completo: parent, `openapi.yaml`, el recurso de ejemplo `Item` con sus tests, `deploy/`, los workflows y los docs |
 | `quarkus-lambda-commons-core` | Cualquier lambda (HTTP, SQS, programada) | `quarkus-amazon-lambda-xray`, `@XRayTraced` (subsegmentos de X-Ray por capa) y el bean `Clock` |
 | `quarkus-lambda-commons-http` | Lambdas de API HTTP. Incluye `core` | El stack HTTP: `quarkus-amazon-lambda-http`, `quarkus-resteasy-jackson` y `quarkus-hibernate-validator`, que la app no declara. Respuestas de error `{name, message, code, errors[]}` para 400, 404 y 409, `CorrelationFilter` (MDC y logs de los bodies) y `DateTimeMapper` (`dd/MM/yyyy`) |
 
 La versión de Quarkus de cada release está en `quarkus-lambda-dependencies/pom.xml` (`quarkus.platform.version`); hoy
 es 3.34.4. Todos salen juntos con la misma versión. El parent de una versión usa los módulos de esa misma versión y la versión de
 Quarkus con la que se probaron, así que una app nunca mezcla versiones incompatibles.
+
+## Crear una lambda
+
+Con el archetype de la misma versión que se quiere usar (Java 25 y Maven):
+
+```bash
+mvn archetype:generate -B \
+  -DarchetypeGroupId=com.xdyan \
+  -DarchetypeArtifactId=quarkus-lambda-http-archetype \
+  -DarchetypeVersion=0.5.0 \
+  -DgroupId=com.acme.orders \
+  -DartifactId=lambda-http-orders \
+  -DrootPath=/orders/v1
+cd lambda-http-orders && ./mvnw clean verify
+```
+
+| Propiedad | Qué es | Por defecto |
+|---|---|---|
+| `artifactId` | Nombre en kebab-case: también el de las funciones (`<nombre>-test`, `<nombre>-prod`), la carpeta de S3 y los parámetros de SSM | — |
+| `groupId` | El código queda en `<groupId>.app` y la API generada en `<groupId>.api` | — |
+| `rootPath` | Ruta base de la API (`quarkus.http.root-path` y `servers` del `openapi.yaml`) | `/api/v1` |
+| `package` | Paquete del código, si no es el `groupId` | El `groupId` |
+
+El proyecto sale con el parent y los workflows de esa versión, y pasa sus tests y las reglas del código. Al terminar, el
+archetype lista los `CHANGE_ME` que faltan (el host de la base por ambiente y la URL de test); los demás pasos están en
+el README del proyecto.
 
 ## Uso
 
