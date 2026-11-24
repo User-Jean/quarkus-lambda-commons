@@ -7,7 +7,9 @@
 # Usage: .github/scripts/check-version-unchanged.sh
 set -euo pipefail
 
-git ls-files '*pom.xml' | python3 -I -c '
+# Not the pom of archetype-resources: it is the project an archetype generates, with the version of the library as a
+# token that archetype-post-generate.groovy replaces
+git ls-files '*pom.xml' ':!:**/archetype-resources/**' | python3 -I -c '
 import sys, xml.etree.ElementTree as ET
 ns = {"m": "http://maven.apache.org/POM/4.0.0"}
 PLACEHOLDER = "0.0.0-SNAPSHOT"
