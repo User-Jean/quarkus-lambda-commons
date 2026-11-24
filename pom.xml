@@ -22,6 +22,7 @@
 
   <modules>
     <module>quarkus-lambda-dependencies</module>
+    <module>quarkus-lambda-code-rules</module>
     <module>quarkus-lambda-parent</module>
     <module>commons-core</module>
     <module>commons-http</module>
