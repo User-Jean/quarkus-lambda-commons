@@ -1,0 +1,100 @@
+name: Lambda PR validation
+
+# Reusable workflow for the pull requests of a lambda built with quarkus-lambda-parent: version guard, JVM tests and
+# the rules of the code (verify: format, Checkstyle, PMD; no native build) and the deploy manifests. No AWS: the OIDC role only trusts develop and main.
+#
+# The lambda calls it from .github/workflows/pr-validation.yaml, with the same version as its parent:
+#
+#   on:
+#     pull_request:
+#       branches: [ develop, main ]
+#   jobs:
+#     validate:
+#       uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-pr-validation.yaml@vX.Y.Z
+#       permissions:
+#         contents: read
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: 'Java version of GraalVM'
+        type: string
+        default: '25'
+
+permissions:
+  contents: read
+
+# The scripts of quarkus-lambda-commons, checked out at the commit of this workflow
+env:
+  COMMONS: .lambda-commons/.github
+
+jobs:
+  test:
+    name: Version, tests & rules
+    runs-on: ubuntu-24.04
+    steps:
+      # Full history and tags: the version extension needs them
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      # The same commit as this workflow (job.workflow_sha), so a lambda on vX.Y.Z runs the scripts of vX.Y.Z.
+      # After the checkout of the lambda: its clean would delete them
+      - name: Checkout quarkus-lambda-commons scripts
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .lambda-commons
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts
+            .github/lambda
+
+      - name: Check the PR doesn't change the version
+        run: |
+          "$COMMONS"/lambda/check-version-unchanged.sh "origin/${{ github.base_ref }}"
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'graalvm'
+          cache: maven
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # verify: the tests and the rules of the code of the parent (format, Checkstyle, PMD)
+      - name: Tests & rules of the code
+        run: mvn -B clean verify
+
+  manifest:
+    name: Deploy manifests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Checkout quarkus-lambda-commons scripts
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .lambda-commons
+          persist-credentials: false
+          sparse-checkout: .github/lambda
+
+      # yq (mikefarah) and jq come with the ubuntu runner
+      - name: Install check-jsonschema
+        run: pipx install check-jsonschema
+
+      - name: Validate test manifest
+        run: |
+          "$COMMONS"/lambda/apply-manifest.sh test --dry-run
+
+      - name: Validate prod manifest
+        run: |
+          "$COMMONS"/lambda/apply-manifest.sh prod --dry-run

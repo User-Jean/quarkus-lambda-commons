@@ -1,0 +1,201 @@
+name: Lambda release to production
+
+# Reusable workflow: takes the most recent pre-release vX.Y.Z of a lambda, checks that it is the one live in test,
+# moves main to its commit and deploys the same zip to <name>-prod (not rebuilt). The release is promoted at the end,
+# so a release always means "deployed in prod". Every step can be run again: if it fails, "Re-run failed jobs"
+# continues with the same version.
+#
+# The lambda calls it from .github/workflows/release-production.yaml, with the same version as its parent:
+#
+#   on:
+#     workflow_dispatch:
+#       inputs:
+#         notes: { description: 'Extra notes for the release (optional)', required: false, type: string }
+#   concurrency:
+#     group: deploy-prod
+#   jobs:
+#     release:
+#       uses: User-Jean/quarkus-lambda-commons/.github/workflows/lambda-release-production.yaml@vX.Y.Z
+#       permissions:
+#         contents: write
+#         id-token: write
+#       with:
+#         notes: ${{ inputs.notes }}
+#         aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+#         artifacts-bucket: ${{ vars.LAMBDA_ARTIFACTS_BUCKET }}
+#       secrets:
+#         AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+on:
+  workflow_call:
+    inputs:
+      notes:
+        description: 'Extra notes for the release (optional)'
+        type: string
+        required: false
+      aws-region:
+        description: 'Region of the lambda and the bucket'
+        type: string
+        default: 'us-east-1'
+      artifacts-bucket:
+        description: 'S3 bucket of the zips, usually the repository variable LAMBDA_ARTIFACTS_BUCKET'
+        type: string
+        required: true
+    secrets:
+      AWS_ROLE_ARN:
+        description: 'Role of GitHub Actions, assumed by OIDC. It only trusts develop and main'
+        required: true
+    outputs:
+      version:
+        description: 'The version released, X.Y.Z'
+        value: ${{ jobs.release.outputs.version }}
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  ENVIRONMENT: prod
+  AWS_REGION: ${{ inputs.aws-region }}
+  S3_BUCKET: ${{ inputs.artifacts-bucket }}
+  # The scripts of quarkus-lambda-commons, checked out at the commit of this workflow
+  COMMONS: .lambda-commons/.github
+
+jobs:
+  release:
+    name: Release to prod
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      # The OIDC role only trusts develop and main
+      - name: Check the branch
+        if: github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Run it from develop or main (was ${{ github.ref_name }})."
+          exit 1
+
+      - name: Check repository configuration
+        run: |
+          if [[ -z $S3_BUCKET ]]; then
+            echo "::error::Set the repository variable LAMBDA_ARTIFACTS_BUCKET (Settings → Secrets and variables → Actions → Variables)."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      # The same commit as this workflow (job.workflow_sha), so a lambda on vX.Y.Z runs the scripts of vX.Y.Z.
+      # After the checkout of the lambda: its clean would delete them
+      - name: Checkout quarkus-lambda-commons scripts
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .lambda-commons
+          persist-credentials: false
+          sparse-checkout: .github/lambda
+
+      - name: Find latest pre-release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NAME=$(yq '.metadata.name' deploy/base.yaml)
+          TAG=$(gh api "repos/${{ github.repository }}/releases" --paginate \
+            -q '.[] | select(.prerelease) | .tag_name' \
+            | { grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true; } \
+            | sort -V | tail -n 1)
+          if [[ -z $TAG ]]; then
+            echo "::error::There is no pre-release. Run \"Deploy to test\" first."
+            exit 1
+          fi
+          VERSION=${TAG#v}
+          SHA=$(git rev-list -n 1 "$TAG")
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "sha=$SHA"
+            echo "name=$NAME"
+            echo "zip_name=$NAME-$VERSION.zip"
+          } >> "$GITHUB_OUTPUT"
+          echo "🚀 Releasing $NAME $TAG ($SHA)"
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # The version description is overwritten on publish, so the code hash is compared instead:
+      # the version live in test must run exactly the zip of the tag
+      - name: Check the version is live in test
+        id: test
+        run: |
+          FUNCTION="${{ steps.release.outputs.name }}-test"
+          KEY="${{ steps.release.outputs.name }}/${{ steps.release.outputs.zip_name }}"
+          LIVE=$(aws lambda get-alias --function-name "$FUNCTION" --name live --query FunctionVersion --output text)
+          LIVE_SHA=$(aws lambda get-function-configuration --function-name "$FUNCTION" --qualifier "$LIVE" \
+            --query CodeSha256 --output text)
+          ZIP_SHA=$(aws s3 cp "s3://$S3_BUCKET/$KEY" - | openssl dgst -sha256 -binary | base64)
+          if [[ $LIVE_SHA != "$ZIP_SHA" ]]; then
+            echo "::error::$FUNCTION:live (version $LIVE) doesn't run $KEY. Deploy ${{ steps.release.outputs.tag }} to test first."
+            exit 1
+          fi
+          DESCRIPTION=$(aws lambda get-function-configuration --function-name "$FUNCTION" --qualifier "$LIVE" \
+            --query Description --output text)
+          {
+            echo "description<<EOF_DESCRIPTION"
+            echo "$DESCRIPTION"
+            echo "EOF_DESCRIPTION"
+          } >> "$GITHUB_OUTPUT"
+          echo "✅ $FUNCTION:live is version $LIVE, running $KEY"
+
+      # Fast-forward only: git refuses the push if main has commits that are not in develop
+      - name: Move main to the commit of the tag
+        run: |
+          SHA="${{ steps.release.outputs.sha }}"
+          if ! git merge-base --is-ancestor "$SHA" origin/develop; then
+            echo "::error::${{ steps.release.outputs.tag }} is not in develop."
+            exit 1
+          fi
+          if ! git push origin "$SHA:refs/heads/main"; then
+            echo "::error::Couldn't fast-forward main to $SHA. Either main has commits that are not in develop," \
+              "or its branch protection doesn't let GitHub Actions push (allow github-actions[bot] to bypass it)."
+            exit 1
+          fi
+
+      # The manifest of the tag, the configuration that was tested
+      - name: Checkout tag
+        run: git checkout -q "${{ steps.release.outputs.tag }}"
+
+      - name: Install check-jsonschema
+        run: pipx install check-jsonschema
+
+      # Configuration before the code, so the published version takes both
+      - name: Apply manifest
+        env:
+          DESCRIPTION: ${{ steps.release.outputs.zip_name }}
+        run: |
+          "$COMMONS"/lambda/apply-manifest.sh "$ENVIRONMENT"
+
+      - name: Deploy code, publish version and move alias live
+        env:
+          VERSION_DESCRIPTION: ${{ steps.test.outputs.description }}
+        run: |
+          "$COMMONS"/lambda/deploy-code.sh "$ENVIRONMENT" "$S3_BUCKET" \
+            "${{ steps.release.outputs.name }}/${{ steps.release.outputs.zip_name }}" "$VERSION_DESCRIPTION"
+
+      - name: Promote pre-release to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          gh release view "$TAG" --json body -q .body > notes.md
+          if [[ -n $NOTES ]]; then
+            printf '\n\n## Notes\n\n%s\n' "$NOTES" >> notes.md
+          fi
+          gh release edit "$TAG" --prerelease=false --latest --notes-file notes.md
